@@ -1,0 +1,66 @@
+﻿using System.Net;
+using System.Net.Sockets;
+using LiteNetLib;
+using LiteNetLib.Utils;
+using SYNC.Messages;
+using SYNC.Utils;
+using UnityEngine;
+
+namespace SYNC.Components {
+	internal sealed class SYNCServer : MonoBehaviour, INetEventListener {
+		[SerializeField] private SYNCSettings _settings;
+		[SerializeField] private bool _debugMode;
+
+		private NetManager _server;
+		private NetPacketProcessor _packetProcessor = new NetPacketProcessor();
+
+		private void Start() {
+			InitializeNetwork();
+		}
+
+		private void InitializeNetwork() {
+			_server = new NetManager(this);
+			if (_settings != null)
+				_settings.Apply(_server);
+
+			if (_debugMode)
+				_server.Start(_settings != null ? _settings.port : 5000);
+
+		}
+
+
+		private void Update() {
+			_server.PollEvents();
+		}
+
+		private void OnDestroy() {
+			_server?.Stop();
+		}
+
+		#region Network Callbacks
+		public void OnPeerConnected(NetPeer peer) {
+			Debug.Log("[SERVER] New peer connected: " + peer.EndPoint);
+		}
+
+		public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo) {
+			Debug.Log($"[SERVER] Peer disconnected {peer.EndPoint}, info: " + disconnectInfo.Reason);
+		}
+
+		public void OnNetworkError(IPEndPoint endPoint, SocketError socketError) {
+			Debug.Log($"[SERVER] NetworkError: {socketError}");
+		}
+
+		public void OnNetworkReceive(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod) {
+			_packetProcessor.ReadAllPackets(reader, peer);
+		}
+
+		public void OnNetworkReceiveUnconnected(IPEndPoint remoteEndPoint, NetPacketReader reader, UnconnectedMessageType messageType) { }
+
+		public void OnNetworkLatencyUpdate(NetPeer peer, int latency) { }
+
+		public void OnConnectionRequest(ConnectionRequest request) {
+			request.AcceptIfKey("sample_app");
+		}
+		#endregion
+	}
+}
