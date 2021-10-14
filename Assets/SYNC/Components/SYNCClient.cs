@@ -14,11 +14,24 @@ namespace SYNC.Components {
 		private NetManager _client;
 		private NetPacketProcessor _packetProcessor = new NetPacketProcessor();
 
+		internal static SYNCClient Instance { get; private set; }
 		internal NetPeer Server => _client.FirstPeer;
 		public bool IsConnected => _client.FirstPeer is {ConnectionState: ConnectionState.Connected};
 
+		private void Awake() {
+			if (Instance == null) {
+				Instance = this;
+			}
+			else {
+				Debug.LogWarning("[SYNC] Multiple clients detected, destroying last created", gameObject);
+				Destroy(this);
+			}
+		}
+
 		private void Start() {
-			SYNCTransformHandler.Initialize();
+			if (!SYNC.IsServer)
+				SYNCTransformHandler.Initialize();
+
 			InitializeNetwork();
 		}
 

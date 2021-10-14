@@ -16,6 +16,18 @@ namespace SYNC.Components {
 
 		private SYNCTickTimer tickTimer;
 
+		internal static SYNCServer Instance { get; private set; }
+
+		private void Awake() {
+			if (Instance == null) {
+				Instance = this;
+			}
+			else {
+				Debug.LogWarning("[SYNC] Multiple servers detected, destroying last created", gameObject);
+				Destroy(this);
+			}
+		}
+
 		private void Start() {
 			SYNCTransformHandler.Initialize();
 			InitializeNetwork();
