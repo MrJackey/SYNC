@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace SYNC.Utils {
 	internal struct TransformPack {
-		public short netID;
+		public int netID;
 		public Vector3Pack position, scale;
 
 		public static void Serialize(NetDataWriter writer, TransformPack pack) {
@@ -13,7 +13,7 @@ namespace SYNC.Utils {
 		}
 
 		public static TransformPack Deserialize(NetDataReader reader) => new TransformPack {
-			netID = reader.GetShort(),
+			netID = reader.GetInt(),
 			position = Vector3Pack.Deserialize(reader),
 			scale = Vector3Pack.Deserialize(reader),
 		};

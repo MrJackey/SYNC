@@ -18,6 +18,7 @@ namespace SYNC.Components {
 		public bool IsConnected => _client.FirstPeer is {ConnectionState: ConnectionState.Connected};
 
 		private void Start() {
+			SYNCTransformHandler.Initialize();
 			InitializeNetwork();
 		}
 
@@ -33,6 +34,8 @@ namespace SYNC.Components {
 				_client.Connect("127.0.0.1", _settings != null ? _settings.port : 5000, "sample_app");
 
 			SYNCHelperInternal.RegisterNestedTypes(_packetProcessor);
+
+			_packetProcessor.SubscribeReusable<SYNCServerStateMsg, NetPeer>(OnNewServerState);
 		}
 
 		private void Update() {
@@ -41,6 +44,10 @@ namespace SYNC.Components {
 
 		private void OnDestroy() {
 			_client?.Stop();
+		}
+
+		private void OnNewServerState(SYNCServerStateMsg msg, NetPeer _) {
+			SYNCTransformHandler.ApplyData(msg.SYNCTransforms);
 		}
 
 		#region Network Callbacks

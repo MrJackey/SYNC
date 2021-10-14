@@ -15,6 +15,7 @@ namespace SYNC.Components {
 		private NetPacketProcessor _packetProcessor = new NetPacketProcessor();
 
 		private void Start() {
+			SYNCTransformHandler.Initialize();
 			InitializeNetwork();
 		}
 
@@ -29,9 +30,18 @@ namespace SYNC.Components {
 			SYNCHelperInternal.RegisterNestedTypes(_packetProcessor);
 		}
 
-
 		private void Update() {
 			_server.PollEvents();
+
+			SendServerState();
+		}
+
+		private void SendServerState() {
+			SYNCServerStateMsg msg = new SYNCServerStateMsg {
+				SYNCTransforms = SYNCTransformHandler.GetData(),
+			};
+
+			_packetProcessor.Send(_server, msg, DeliveryMethod.ReliableSequenced);
 		}
 
 		private void OnDestroy() {
