@@ -14,6 +14,8 @@ namespace SYNC.Components {
 		private NetManager _server;
 		private NetPacketProcessor _packetProcessor = new NetPacketProcessor();
 
+		private SYNCTickTimer tickTimer;
+
 		private void Start() {
 			SYNCTransformHandler.Initialize();
 			InitializeNetwork();
@@ -27,13 +29,18 @@ namespace SYNC.Components {
 			if (_debugMode)
 				_server.Start(_settings != null ? _settings.port : 5000);
 
+			tickTimer = new SYNCTickTimer(_settings ? _settings.tickRate : (short)60);
+
 			SYNCHelperInternal.RegisterNestedTypes(_packetProcessor);
 		}
 
 		private void Update() {
 			_server.PollEvents();
 
-			SendServerState();
+			if (tickTimer.Elapsed) {
+				SendServerState();
+				tickTimer.Restart();
+			}
 		}
 
 		private void SendServerState() {
