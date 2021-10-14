@@ -26,6 +26,7 @@ namespace SYNC.Components {
 			if (_debugMode)
 				_server.Start(_settings != null ? _settings.port : 5000);
 
+			SYNCHelperInternal.RegisterNestedTypes(_packetProcessor);
 		}
 
 

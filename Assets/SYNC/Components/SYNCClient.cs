@@ -32,6 +32,7 @@ namespace SYNC.Components {
 			if (_debugMode)
 				_client.Connect("127.0.0.1", _settings != null ? _settings.port : 5000, "sample_app");
 
+			SYNCHelperInternal.RegisterNestedTypes(_packetProcessor);
 		}
 
 		private void Update() {
