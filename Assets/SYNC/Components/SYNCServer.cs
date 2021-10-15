@@ -17,6 +17,7 @@ namespace SYNC.Components {
 		private NetPacketProcessor _packetProcessor = new NetPacketProcessor();
 
 		private SYNCTickTimer tickTimer;
+		private Dictionary<int, SYNCIdentity> _registeredPrefabs = new Dictionary<int, SYNCIdentity>();
 
 		internal Dictionary<int, SYNCIdentity> SyncIdentities { get; } = new Dictionary<int, SYNCIdentity>();
 		internal static SYNCServer Instance { get; private set; }
@@ -38,7 +39,15 @@ namespace SYNC.Components {
 				SyncIdentities.Add(syncIdentity.NetID, syncIdentity);
 			}
 
+			if (_settings != null)
+				RegisterPrefabs();
+
 			InitializeNetwork();
+		}
+
+		private void RegisterPrefabs() {
+			foreach (SYNCIdentity prefab in _settings.nonPlayerPrefabs)
+				_registeredPrefabs.Add(prefab.GetInstanceID(), prefab);
 		}
 
 		private void InitializeNetwork() {
