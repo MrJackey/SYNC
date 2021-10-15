@@ -70,6 +70,13 @@ namespace SYNC.Components {
 		#region Network Callbacks
 		public void OnPeerConnected(NetPeer peer) {
 			Debug.Log("[SERVER] New peer connected: " + peer.EndPoint);
+			_packetProcessor.Send(peer, new SYNCClientRegisterNetIDMsg {ClientNetID = peer.Id}, DeliveryMethod.ReliableOrdered);
+
+			foreach (NetPeer connectedPeer in _server.ConnectedPeerList) {
+				if (connectedPeer.Id == peer.Id) continue;
+
+				_packetProcessor.Send(connectedPeer, new SYNCClientJoinedMsg {ClientNetID = peer.Id}, DeliveryMethod.ReliableOrdered);
+			}
 		}
 
 		public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo) {

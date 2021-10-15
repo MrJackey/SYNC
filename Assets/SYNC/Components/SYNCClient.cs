@@ -13,6 +13,7 @@ namespace SYNC.Components {
 
 		private NetManager _client;
 		private NetPacketProcessor _packetProcessor = new NetPacketProcessor();
+		private int _clientNetID;
 
 		internal static SYNCClient Instance { get; private set; }
 		internal NetPeer Server => _client.FirstPeer;
@@ -48,6 +49,9 @@ namespace SYNC.Components {
 
 			SYNCHelperInternal.RegisterNestedTypes(_packetProcessor);
 
+			_packetProcessor.SubscribeReusable<SYNCClientRegisterNetIDMsg, NetPeer>(OnRegisterNetID);
+			_packetProcessor.SubscribeReusable<SYNCClientJoinedMsg, NetPeer>(OnClientJoined);
+			_packetProcessor.SubscribeReusable<SYNCClientDisconnectMsg, NetPeer>(OnClientDisconnect);
 			_packetProcessor.SubscribeReusable<SYNCServerStateMsg, NetPeer>(OnNewServerState);
 		}
 
@@ -59,9 +63,22 @@ namespace SYNC.Components {
 			_client?.Stop();
 		}
 
+		#region Message Callbacks
 		private void OnNewServerState(SYNCServerStateMsg msg, NetPeer _) {
 			SYNCTransformHandler.ApplyData(msg.SYNCTransforms);
 		}
+
+		private void OnRegisterNetID(SYNCClientRegisterNetIDMsg msg, NetPeer _) {
+			Debug.Log($"[CLIENT] Connected with ClientNetID: {msg.ClientNetID}");
+			_clientNetID = msg.ClientNetID;
+		}
+
+		private void OnClientJoined(SYNCClientJoinedMsg msg, NetPeer _) {
+		}
+
+		private void OnClientDisconnect(SYNCClientDisconnectMsg msg, NetPeer _) {
+		}
+		#endregion
 
 		#region Network Callbacks
 		public void OnPeerConnected(NetPeer peer) {
