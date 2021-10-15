@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Collections.Generic;
+using System.Net;
 using System.Net.Sockets;
 using LiteNetLib;
 using LiteNetLib.Utils;
@@ -7,6 +8,7 @@ using SYNC.Utils;
 using UnityEngine;
 
 namespace SYNC.Components {
+	[DefaultExecutionOrder(-1)]
 	internal sealed class SYNCClient : MonoBehaviour, INetEventListener {
 		[SerializeField] private SYNCSettings _settings;
 		[SerializeField] private bool _debugMode;
@@ -16,12 +18,14 @@ namespace SYNC.Components {
 		private int _clientNetID;
 
 		internal static SYNCClient Instance { get; private set; }
+		internal Dictionary<int, SYNCIdentity> SyncIdentities { get; } = new Dictionary<int, SYNCIdentity>();
 		internal NetPeer Server => _client.FirstPeer;
 		public bool IsConnected => _client.FirstPeer is {ConnectionState: ConnectionState.Connected};
 
 		private void Awake() {
 			if (Instance == null) {
 				Instance = this;
+				SYNC.IsClient = true;
 			}
 			else {
 				Debug.LogWarning("[SYNC] Multiple clients detected, destroying last created", gameObject);
@@ -30,8 +34,13 @@ namespace SYNC.Components {
 		}
 
 		private void Start() {
-			if (!SYNC.IsServer)
-				SYNCTransformHandler.Initialize();
+			foreach (SYNCIdentity syncIdentity in SYNCHelperInternal.FindExistingIdentities()) {
+				if (!SYNC.IsServer)
+					syncIdentity.NetID = SYNC.NextNetID;
+
+				SyncIdentities.Add(syncIdentity.NetID, syncIdentity);
+			}
+
 
 			InitializeNetwork();
 		}

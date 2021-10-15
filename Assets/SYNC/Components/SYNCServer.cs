@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Collections.Generic;
+using System.Net;
 using System.Net.Sockets;
 using LiteNetLib;
 using LiteNetLib.Utils;
@@ -7,6 +8,7 @@ using SYNC.Utils;
 using UnityEngine;
 
 namespace SYNC.Components {
+	[DefaultExecutionOrder(-2)]
 	internal sealed class SYNCServer : MonoBehaviour, INetEventListener {
 		[SerializeField] private SYNCSettings _settings;
 		[SerializeField] private bool _debugMode;
@@ -16,11 +18,13 @@ namespace SYNC.Components {
 
 		private SYNCTickTimer tickTimer;
 
+		internal Dictionary<int, SYNCIdentity> SyncIdentities { get; } = new Dictionary<int, SYNCIdentity>();
 		internal static SYNCServer Instance { get; private set; }
 
 		private void Awake() {
 			if (Instance == null) {
 				Instance = this;
+				SYNC.IsServer = true;
 			}
 			else {
 				Debug.LogWarning("[SYNC] Multiple servers detected, destroying last created", gameObject);
@@ -29,7 +33,11 @@ namespace SYNC.Components {
 		}
 
 		private void Start() {
-			SYNCTransformHandler.Initialize();
+			foreach (SYNCIdentity syncIdentity in SYNCHelperInternal.FindExistingIdentities()) {
+				syncIdentity.NetID = SYNC.NextNetID;
+				SyncIdentities.Add(syncIdentity.NetID, syncIdentity);
+			}
+
 			InitializeNetwork();
 		}
 

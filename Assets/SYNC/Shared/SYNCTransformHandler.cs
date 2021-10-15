@@ -1,27 +1,25 @@
 ﻿using System.Collections.Generic;
 using SYNC.Components;
 using SYNC.Utils;
-using UnityEngine;
 
 namespace SYNC {
 	internal static class SYNCTransformHandler {
-		private static Dictionary<int, SYNCTransform> _transforms = new Dictionary<int, SYNCTransform>();
+		private static HashSet<int> _transformIDs = new HashSet<int>();
 
-		internal static void Initialize() {
-			SYNCTransform[] syncTransforms = GameObject.FindObjectsOfType<SYNCTransform>();
+		internal static void Register(int syncIdentityNetID) {
+			_transformIDs.Add(syncIdentityNetID);
+		}
 
-			foreach (SYNCTransform syncTransform in syncTransforms) {
-				syncTransform.NetID = SYNC.NextNetID;
-				_transforms.Add(syncTransform.NetID, syncTransform);
-			}
+		internal static void UnRegister(int syncIdentityNetID) {
+			_transformIDs.Remove(syncIdentityNetID);
 		}
 
 		internal static TransformPack[] GetData() {
-			TransformPack[] packs = new TransformPack[_transforms.Count];
+			TransformPack[] packs = new TransformPack[_transformIDs.Count];
 
 			int i = 0;
-			foreach (SYNCTransform syncTransform in _transforms.Values) {
-				packs[i] = syncTransform.GetData();
+			foreach (int ID in _transformIDs) {
+				packs[i] = SYNCServer.Instance.SyncIdentities[ID].SYNCTransform.GetData();
 				i++;
 			}
 
@@ -30,7 +28,7 @@ namespace SYNC {
 
 		internal static void ApplyData(TransformPack[] msg) {
 			foreach (TransformPack pack in msg)
-				_transforms[pack.netID].ApplyData(pack);
+				SYNCClient.Instance.SyncIdentities[pack.netID].SYNCTransform.ApplyData(pack);
 		}
 	}
 }
