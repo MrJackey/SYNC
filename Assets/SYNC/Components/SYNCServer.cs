@@ -80,6 +80,30 @@ namespace SYNC.Components {
 			_packetProcessor.Send(_server, msg, DeliveryMethod.ReliableSequenced);
 		}
 
+		internal void SendObjectInstantiate(Object prefab, Vector3 position, Quaternion rotation) {
+			int prefabID = prefab.GetInstanceID();
+			if (!_registeredPrefabs.TryGetValue(prefabID, out SYNCIdentity obj)) {
+				Debug.LogError($"[SERVER] Trying to instantiate an object which is not registered: {prefab.name}", prefab);
+				return;
+			}
+
+			SYNCIdentity syncComponent = Instantiate(obj, position, rotation);
+			syncComponent.NetID = SYNC.NextNetID;
+			SyncIdentities.Add(syncComponent.NetID, syncComponent);
+
+			if (SYNC.IsClient)
+				SYNCClient.Instance.SyncIdentities.Add(syncComponent.NetID, syncComponent);
+
+			SYNCObjectInstantiateMsg msg = new SYNCObjectInstantiateMsg {NetID = syncComponent.NetID, PrefabID = prefabID, Position = position};
+			_packetProcessor.Send(_server, msg, DeliveryMethod.ReliableOrdered);
+		}
+
+		internal void SendObjectDestroy(SYNCIdentity obj) {
+			SYNCObjectDestroyMsg msg = new SYNCObjectDestroyMsg {NetID = obj.NetID};
+			Destroy(SyncIdentities[msg.NetID].gameObject);
+			_packetProcessor.Send(_server, msg, DeliveryMethod.ReliableOrdered);
+		}
+
 		private void OnDestroy() {
 			_server?.Stop();
 		}

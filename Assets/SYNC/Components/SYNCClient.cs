@@ -70,6 +70,8 @@ namespace SYNC.Components {
 			_packetProcessor.SubscribeReusable<SYNCClientJoinedMsg, NetPeer>(OnClientJoined);
 			_packetProcessor.SubscribeReusable<SYNCClientDisconnectMsg, NetPeer>(OnClientDisconnect);
 			_packetProcessor.SubscribeReusable<SYNCServerStateMsg, NetPeer>(OnNewServerState);
+			_packetProcessor.SubscribeReusable<SYNCObjectInstantiateMsg, NetPeer>(OnObjectInstantiate);
+			_packetProcessor.SubscribeReusable<SYNCObjectDestroyMsg, NetPeer>(OnObjectDestroy);
 		}
 
 		private void Update() {
@@ -83,6 +85,25 @@ namespace SYNC.Components {
 		#region Message Callbacks
 		private void OnNewServerState(SYNCServerStateMsg msg, NetPeer _) {
 			SYNCTransformHandler.ApplyData(msg.SYNCTransforms);
+		}
+
+		private void OnObjectInstantiate(SYNCObjectInstantiateMsg msg, NetPeer _) {
+			if (!_registeredPrefabs.TryGetValue(msg.PrefabID, out SYNCIdentity obj)) {
+				Debug.LogError($"[CLIENT] Received an instantiate message with unknown id: {msg.PrefabID}");
+				return;
+			}
+
+			if (!SYNC.IsServer) {
+				SYNCIdentity syncComponent = Instantiate(obj, msg.Position, Quaternion.identity);
+				syncComponent.NetID = msg.NetID;
+				SyncIdentities.Add(msg.NetID, syncComponent);
+			}
+		}
+
+		private void OnObjectDestroy(SYNCObjectDestroyMsg msg, NetPeer _) {
+			if (!SYNC.IsServer)
+				Destroy(SyncIdentities[msg.NetID].gameObject);
+			SyncIdentities.Remove(msg.NetID);
 		}
 
 		private void OnRegisterNetID(SYNCClientRegisterNetIDMsg msg, NetPeer _) {

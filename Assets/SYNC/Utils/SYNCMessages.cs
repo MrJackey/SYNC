@@ -13,6 +13,16 @@ namespace SYNC.Messages {
 		public int NetID { get; set; }
 	}
 
+	internal class SYNCObjectInstantiateMsg {
+		public int NetID { get; set; }
+		public int PrefabID { get; set; }
+		public Vector3Pack Position { get; set; }
+	}
+
+	internal class SYNCObjectDestroyMsg {
+		public int NetID { get; set; }
+	}
+
 	internal class SYNCServerStateMsg {
 		public TransformPack[] SYNCTransforms { get; set; }
 	}
