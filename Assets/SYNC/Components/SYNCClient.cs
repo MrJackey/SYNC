@@ -18,6 +18,8 @@ namespace SYNC.Components {
 		private int _clientNetID;
 		private Dictionary<int, SYNCIdentity> _registeredPrefabs = new Dictionary<int, SYNCIdentity>();
 
+		private uint _lastReceivedServerTick = 0;
+
 		internal static SYNCClient Instance { get; private set; }
 		internal Dictionary<int, SYNCIdentity> SyncIdentities { get; } = new Dictionary<int, SYNCIdentity>();
 		internal NetPeer Server => _client.FirstPeer;
@@ -84,7 +86,11 @@ namespace SYNC.Components {
 
 		#region Message Callbacks
 		private void OnNewServerState(SYNCServerStateMsg msg, NetPeer _) {
+			// Skip old packages arriving late
+			if (msg.tick >= _lastReceivedServerTick) {
 				SYNCTransformHandler.ApplyData(msg.SYNCTransforms);
+				_lastReceivedServerTick = msg.tick;
+			}
 		}
 
 		private void OnObjectInstantiate(SYNCObjectInstantiateMsg msg, NetPeer _) {

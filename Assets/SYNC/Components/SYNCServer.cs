@@ -18,6 +18,7 @@ namespace SYNC.Components {
 
 		private SYNCTickTimer tickTimer;
 		private Dictionary<int, SYNCIdentity> _registeredPrefabs = new Dictionary<int, SYNCIdentity>();
+		private uint _serverTick;
 
 		internal Dictionary<int, SYNCIdentity> SyncIdentities { get; } = new Dictionary<int, SYNCIdentity>();
 		internal static SYNCServer Instance { get; private set; }
@@ -67,6 +68,7 @@ namespace SYNC.Components {
 			_server.PollEvents();
 
 			if (tickTimer.Elapsed) {
+				_serverTick++;
 				SendServerState();
 				tickTimer.Restart();
 			}
@@ -74,14 +76,14 @@ namespace SYNC.Components {
 
 		private void SendServerState() {
 			TransformPack[] syncTransforms = SYNCTransformHandler.GetData();
-			const DeliveryMethod deliveryMethod = DeliveryMethod.ReliableSequenced;
+			const DeliveryMethod deliveryMethod = DeliveryMethod.Unreliable;
 
 			foreach (NetPeer peer in _server.ConnectedPeerList) {
 				int maxPacketSize = peer.GetMaxSinglePacketSize(deliveryMethod) - SYNCServerStateMsg.HeaderSize;
 
 				List<SYNCPacket<TransformPack>> packets = SYNCHelperInternal.DividePacksIntoPackets(syncTransforms, maxPacketSize);
 				foreach (SYNCPacket<TransformPack> packet in packets)
-					_packetProcessor.Send(peer, new SYNCServerStateMsg {SYNCTransforms = packet.Content}, deliveryMethod);
+					_packetProcessor.Send(peer, new SYNCServerStateMsg {tick = _serverTick, SYNCTransforms = packet.Content}, deliveryMethod);
 			}
 		}
 
