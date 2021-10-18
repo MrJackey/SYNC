@@ -24,6 +24,7 @@ namespace SYNC.Messages {
 	}
 
 	internal class SYNCServerStateMsg {
+		public static int HeaderSize => sizeof(uint);
 		public TransformPack[] SYNCTransforms { get; set; }
 	}
 }

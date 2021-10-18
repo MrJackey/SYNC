@@ -2,9 +2,15 @@
 using UnityEngine;
 
 namespace SYNC.Utils {
-	internal struct TransformPack {
+	internal interface IPack {
+		public int Size { get;  }
+	}
+
+	internal struct TransformPack : IPack {
 		public int netID;
 		public Vector3Pack position, scale;
+
+		public int Size => sizeof(int) + sizeof(float) * 6;
 
 		public static void Serialize(NetDataWriter writer, TransformPack pack) {
 			writer.Put(pack.netID);

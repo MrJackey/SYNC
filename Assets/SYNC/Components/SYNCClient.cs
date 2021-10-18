@@ -84,7 +84,7 @@ namespace SYNC.Components {
 
 		#region Message Callbacks
 		private void OnNewServerState(SYNCServerStateMsg msg, NetPeer _) {
-			SYNCTransformHandler.ApplyData(msg.SYNCTransforms);
+				SYNCTransformHandler.ApplyData(msg.SYNCTransforms);
 		}
 
 		private void OnObjectInstantiate(SYNCObjectInstantiateMsg msg, NetPeer _) {

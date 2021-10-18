@@ -73,11 +73,16 @@ namespace SYNC.Components {
 		}
 
 		private void SendServerState() {
-			SYNCServerStateMsg msg = new SYNCServerStateMsg {
-				SYNCTransforms = SYNCTransformHandler.GetData(),
-			};
+			TransformPack[] syncTransforms = SYNCTransformHandler.GetData();
+			const DeliveryMethod deliveryMethod = DeliveryMethod.ReliableSequenced;
 
-			_packetProcessor.Send(_server, msg, DeliveryMethod.ReliableSequenced);
+			foreach (NetPeer peer in _server.ConnectedPeerList) {
+				int maxPacketSize = peer.GetMaxSinglePacketSize(deliveryMethod) - SYNCServerStateMsg.HeaderSize;
+
+				List<SYNCPacket<TransformPack>> packets = SYNCHelperInternal.DividePacksIntoPackets(syncTransforms, maxPacketSize);
+				foreach (SYNCPacket<TransformPack> packet in packets)
+					_packetProcessor.Send(peer, new SYNCServerStateMsg {SYNCTransforms = packet.Content}, deliveryMethod);
+			}
 		}
 
 		internal void SendObjectInstantiate(Object prefab, Vector3 position, Quaternion rotation) {
