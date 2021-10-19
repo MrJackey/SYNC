@@ -100,7 +100,7 @@ namespace SYNC.Components {
 			}
 
 			if (!SYNC.IsServer) {
-				SYNCIdentity syncComponent = Instantiate(obj, msg.Position, Quaternion.identity);
+				SYNCIdentity syncComponent = Instantiate(obj, msg.Info.Position, msg.Info.Rotation);
 				syncComponent.NetID = msg.NetID;
 				SyncIdentities.Add(msg.NetID, syncComponent);
 			}

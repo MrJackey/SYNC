@@ -87,7 +87,7 @@ namespace SYNC.Components {
 			}
 		}
 
-		internal void SendObjectInstantiate(Object prefab, Vector3 position, Quaternion rotation) {
+		internal void SendObjectInstantiate(Object prefab, Vector3 position, Quaternion rotation, SYNCInstantiateMode mode, SYNCFloatAccuracy accuracy) {
 			int prefabID = prefab.GetInstanceID();
 			if (!_registeredPrefabs.TryGetValue(prefabID, out SYNCIdentity obj)) {
 				Debug.LogError($"[SERVER] Trying to instantiate an object which is not registered: {prefab.name}", prefab);
@@ -101,7 +101,14 @@ namespace SYNC.Components {
 			if (SYNC.IsClient)
 				SYNCClient.Instance.SyncIdentities.Add(syncComponent.NetID, syncComponent);
 
-			SYNCObjectInstantiateMsg msg = new SYNCObjectInstantiateMsg {NetID = syncComponent.NetID, PrefabID = prefabID, Position = position};
+			InstantiatePack pack = new InstantiatePack(
+				position,
+				rotation,
+				(SYNCInstantiateOptions)((ushort)mode | (ushort)accuracy)
+			);
+
+			SYNCObjectInstantiateMsg msg = new SYNCObjectInstantiateMsg {NetID = syncComponent.NetID, PrefabID = prefabID, Info = pack};
+
 			_packetProcessor.Send(_server, msg, DeliveryMethod.ReliableOrdered);
 		}
 

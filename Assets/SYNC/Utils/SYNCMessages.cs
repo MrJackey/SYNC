@@ -16,7 +16,7 @@ namespace SYNC.Messages {
 	internal class SYNCObjectInstantiateMsg {
 		public int NetID { get; set; }
 		public int PrefabID { get; set; }
-		public Vector3Pack Position { get; set; }
+		public InstantiatePack Info { get; set; }
 	}
 
 	internal class SYNCObjectDestroyMsg {

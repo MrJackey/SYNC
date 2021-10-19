@@ -1,6 +1,11 @@
 ﻿using System;
 
 namespace SYNC.Utils {
+	public enum SYNCFloatAccuracy : ushort {
+		Half = 1,
+		Float = 2,
+	}
+
 	public enum SYNCPositionPrecision : ushort {
 		Ignore = 1,
 		Vector3Half = 2,
@@ -26,19 +31,36 @@ namespace SYNC.Utils {
 
 	[Flags]
 	public enum SYNCTransformOptions : ushort {
-		PositionIgnore = 1,
-		PositionVector3Half = 2,
-		PositionVector3Float = 4,
-		PositionVector2Half = 8,
-		PositionVector2Float = 16,
-		RotationIgnore = 32,
-		Quaternion = 64,
-		ScaleIgnore = 128,
-		ScaleVector3Half = 256,
-		ScaleVector3Float = 512,
-		ScaleVector2Half = 1024,
-		ScaleVector2Float = 2048,
-		ScaleUniformHalf = 4096,
-		ScaleUniformFloat = 8192,
+		PositionIgnore = SYNCPositionPrecision.Ignore,
+		PositionVector3Half = SYNCPositionPrecision.Vector3Half,
+		PositionVector3Float = SYNCPositionPrecision.Vector3Float,
+		PositionVector2Half = SYNCPositionPrecision.Vector2Half,
+		PositionVector2Float = SYNCPositionPrecision.Vector2Float,
+		RotationIgnore = SYNCRotationPrecision.Ignore,
+		Quaternion = SYNCRotationPrecision.Quaternion,
+		ScaleIgnore = SYNCScalePrecision.Ignore,
+		ScaleVector3Half = SYNCScalePrecision.Vector3Half,
+		ScaleVector3Float = SYNCScalePrecision.Vector3Float,
+		ScaleVector2Half = SYNCScalePrecision.Vector2Half,
+		ScaleVector2Float = SYNCScalePrecision.Vector2Float,
+		ScaleUniformHalf = SYNCScalePrecision.UniformHalf,
+		ScaleUniformFloat = SYNCScalePrecision.UniformFloat,
+	}
+
+	public enum SYNCInstantiateMode : ushort {
+		Standard = 4,
+		PositionOnly = 8,
+		RotationOnly = 16,
+		PositionAndRotation = 32,
+	}
+
+	[Flags]
+	public enum SYNCInstantiateOptions : ushort {
+		Half = SYNCFloatAccuracy.Half,
+		Float = SYNCFloatAccuracy.Float,
+		Standard = SYNCInstantiateMode.Standard,
+		PositionOnly = SYNCInstantiateMode.PositionOnly,
+		RotationOnly = SYNCInstantiateMode.RotationOnly,
+		PositionAndRotation = SYNCInstantiateMode.PositionAndRotation,
 	}
 }

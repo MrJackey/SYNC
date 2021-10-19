@@ -107,6 +107,55 @@ namespace SYNC.Utils {
 		}
 	}
 
+	internal struct InstantiatePack {
+		public SYNCInstantiateOptions options;
+
+		public Vector3 Position { get; }
+		public Quaternion Rotation { get; }
+
+		internal InstantiatePack(Vector3 position, Quaternion rotation, SYNCInstantiateOptions options) {
+			this.Position = position;
+			this.Rotation = rotation;
+			this.options = options;
+		}
+
+		public static void Serialize(NetDataWriter writer, InstantiatePack pack) {
+			writer.Put((ushort)pack.options);
+			if ((pack.options & SYNCInstantiateOptions.Standard) != 0)
+				return;
+
+			if ((pack.options & (SYNCInstantiateOptions.PositionOnly | SYNCInstantiateOptions.PositionAndRotation)) != 0) {
+				if ((pack.options & SYNCInstantiateOptions.Half) != 0)
+					Vector3HalfPack.Serialize(writer, pack.Position);
+				else if ((pack.options & SYNCInstantiateOptions.Float) != 0)
+					Vector3Pack.Serialize(writer, pack.Position);
+			}
+
+			if ((pack.options & (SYNCInstantiateOptions.RotationOnly | SYNCInstantiateOptions.PositionAndRotation)) != 0) {
+				QuaternionPack.Serialize(writer, pack.Rotation);
+			}
+		}
+
+		public static InstantiatePack Deserialize(NetDataReader reader) {
+			SYNCInstantiateOptions options = (SYNCInstantiateOptions)reader.GetUShort();
+			Vector3 position = Vector3.zero;
+			Quaternion rotation = Quaternion.identity;
+
+			if ((options & (SYNCInstantiateOptions.PositionOnly | SYNCInstantiateOptions.PositionAndRotation)) != 0) {
+				if ((options & SYNCInstantiateOptions.Half) != 0)
+					position = Vector3HalfPack.Deserialize(reader);
+				else if ((options & SYNCInstantiateOptions.Float) != 0)
+					position = Vector3Pack.Deserialize(reader);
+			}
+
+			if ((options & (SYNCInstantiateOptions.RotationOnly | SYNCInstantiateOptions.PositionAndRotation)) != 0) {
+				rotation = QuaternionPack.Deserialize(reader);
+			}
+
+			return new InstantiatePack(position, rotation, options);
+		}
+	}
+
 	internal struct Vector3Pack {
 		public float x, y, z;
 
