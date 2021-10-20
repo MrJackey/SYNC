@@ -19,7 +19,7 @@ namespace SYNC.Utils {
 			_stopwatch = new Stopwatch();
 			_stopwatch.Start();
 
-			Duration = 1f / tickRate;
+			Duration = 1f / tickRate * 1000f;
 		}
 
 		public void Restart() {
