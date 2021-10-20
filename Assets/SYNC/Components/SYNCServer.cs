@@ -79,7 +79,10 @@ namespace SYNC.Components {
 			const DeliveryMethod deliveryMethod = DeliveryMethod.Unreliable;
 
 			foreach (NetPeer peer in _server.ConnectedPeerList) {
-				int maxPacketSize = peer.GetMaxSinglePacketSize(deliveryMethod) - SYNCServerStateMsg.HeaderSize;
+				int maxPacketSize = peer.GetMaxSinglePacketSize(deliveryMethod)
+				                    - sizeof(ulong) // The NetPacketProcessor adds an ulong hash of 8 bytes onto its own writer
+				                    - 2 // Not sure where these 2 bytes are being added to the writer
+				                    - SYNCServerStateMsg.HeaderSize;
 
 				List<SYNCPacket<TransformPack>> packets = SYNCHelperInternal.DividePacksIntoPackets(syncTransforms, maxPacketSize);
 				foreach (SYNCPacket<TransformPack> packet in packets)

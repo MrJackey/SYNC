@@ -15,7 +15,9 @@ namespace SYNC.Utils {
 		public Quaternion Rotation { get; }
 		public Vector3 Scale { get; }
 
-		public int Size => options.GetByteSize();
+		public int Size => sizeof(int) // netID
+		                   + sizeof(ushort) // options ushort
+		                   + options.GetByteSize();
 
 		internal TransformPack(int netID, SYNCTransformOptions options, Vector3 position, Quaternion rotation, Vector3 scale) {
 			this.netID = netID;
