@@ -16,3 +16,4 @@ MonoBehaviour:
   port: 5000
   nonPlayerPrefabs:
   - {fileID: 4886819803050414543, guid: c2f4bf592d5110d4fa67fa21c9f26bb4, type: 3}
+  password: Debug_key

@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using LiteNetLib;
@@ -6,11 +8,15 @@ using LiteNetLib.Utils;
 using SYNC.Messages;
 using SYNC.Utils;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace SYNC.Components {
 	[DefaultExecutionOrder(-2)]
 	internal sealed class SYNCServer : MonoBehaviour, INetEventListener {
+		internal static SYNCServer Instance { get; private set; }
+
 		[SerializeField] private SYNCSettings _settings;
+		[SerializeField] private bool _startOnAwake;
 		[SerializeField] private bool _debugMode;
 
 		private NetManager _server;
@@ -19,9 +25,10 @@ namespace SYNC.Components {
 		private SYNCTickTimer tickTimer;
 		private Dictionary<int, SYNCIdentity> _registeredPrefabs = new Dictionary<int, SYNCIdentity>();
 		private uint _serverTick;
+		private string _password;
 
 		internal Dictionary<int, SYNCIdentity> SyncIdentities { get; } = new Dictionary<int, SYNCIdentity>();
-		internal static SYNCServer Instance { get; private set; }
+		internal bool IsRunning => _server is {IsRunning: true};
 
 		private void Awake() {
 			if (Instance == null) {
@@ -32,36 +39,40 @@ namespace SYNC.Components {
 				Debug.LogWarning("[SYNC] Multiple servers detected, destroying last created", gameObject);
 				Destroy(this);
 			}
-		}
 
-		private void Start() {
 			foreach (SYNCIdentity syncIdentity in SYNCHelperInternal.FindExistingIdentities()) {
 				syncIdentity.NetID = SYNC.NextNetID;
 				SyncIdentities.Add(syncIdentity.NetID, syncIdentity);
 			}
 
-			if (_settings != null)
-				RegisterPrefabs();
+			if (_startOnAwake)
+				if (_settings != null)
+					InitializeNetwork(_settings.port, _settings.tickRate);
+				else
+					InitializeNetwork(5000, 60);
+		}
 
-			InitializeNetwork();
+		private void InitializeNetwork(int port, short tickRate) {
+			if (_settings == null) {
+				Debug.LogError("[SERVER] Does not have access to a settings object", gameObject);
+				return;
+			}
+
+			_server = new NetManager(this);
+
+			RegisterPrefabs();
+			_settings.Apply(_server);
+
+			_server.Start(port);
+
+			tickTimer = new SYNCTickTimer(tickRate);
+
+			SYNCHelperInternal.RegisterNestedTypes(_packetProcessor);
 		}
 
 		private void RegisterPrefabs() {
 			foreach (SYNCIdentity prefab in _settings.nonPlayerPrefabs)
 				_registeredPrefabs.Add(prefab.GetInstanceID(), prefab);
-		}
-
-		private void InitializeNetwork() {
-			_server = new NetManager(this);
-			if (_settings != null)
-				_settings.Apply(_server);
-
-			if (_debugMode)
-				_server.Start(_settings != null ? _settings.port : 5000);
-
-			tickTimer = new SYNCTickTimer(_settings ? _settings.tickRate : (short)60);
-
-			SYNCHelperInternal.RegisterNestedTypes(_packetProcessor);
 		}
 
 		private void Update() {
@@ -72,6 +83,25 @@ namespace SYNC.Components {
 				SendServerState();
 				tickTimer.Restart();
 			}
+		}
+
+		private void OnDestroy() {
+			_server?.Stop();
+			SYNC.IsServer = false;
+		}
+
+		internal void Host(string password, SYNCSettings settings, Action onConnect) {
+			_settings = settings;
+			_password = password;
+
+			InitializeNetwork(settings.port, settings.tickRate);
+			StartCoroutine(CoConnectToSelf(password, settings, onConnect));
+		}
+
+		private IEnumerator CoConnectToSelf(string password, SYNCSettings settings, Action onConnect) {
+			yield return new WaitUntil(() => _server.IsRunning);
+
+			SYNC.Connect("127.0.0.1", _settings.port, password, settings, onConnect);
 		}
 
 		#region Message Senders
@@ -136,10 +166,6 @@ namespace SYNC.Components {
 			Destroy(SyncIdentities[msg.NetID].gameObject);
 			_packetProcessor.Send(_server, msg, DeliveryMethod.ReliableOrdered);
 		}
-
-		private void OnDestroy() {
-			_server?.Stop();
-		}
 		#endregion
 
 		#region Network Callbacks
@@ -171,7 +197,10 @@ namespace SYNC.Components {
 		public void OnNetworkLatencyUpdate(NetPeer peer, int latency) { }
 
 		public void OnConnectionRequest(ConnectionRequest request) {
-			request.AcceptIfKey("sample_app");
+			if (_debugMode)
+				request.AcceptIfKey(_settings.password);
+			else
+				request.AcceptIfKey(_password);
 		}
 		#endregion
 	}

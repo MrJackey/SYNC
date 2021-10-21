@@ -1,6 +1,8 @@
-﻿using SYNC.Components;
+﻿using System;
+using SYNC.Components;
 using SYNC.Utils;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace SYNC {
 	public static class SYNC {
@@ -9,6 +11,28 @@ namespace SYNC {
 
 		public static bool IsServer { get; internal set; }
 		public static bool IsClient { get; internal set; }
+
+		public static void Host(string password, SYNCSettings settings, Action onConnect = default) {
+			if (IsServer && SYNCServer.Instance.IsRunning) {
+				Debug.LogWarning("[SYNC] Unable to host server, a server is already hosted");
+				return;
+			}
+
+			SYNCServer server = new GameObject("SYNC Server", typeof(SYNCServer)).GetComponent<SYNCServer>();
+			server.Host(password, settings, onConnect);
+		}
+
+		public static void Connect(string address, int port, string password, SYNCSettings settings, Action onConnect = default) {
+			if (IsClient && SYNCClient.Instance.IsConnected) {
+				Debug.LogWarning("[SYNC] Unable to connect to address, client is already connected to a host");
+				return;
+			}
+
+			SYNCClient client = new GameObject("SYNC Client", typeof(SYNCClient)).GetComponent<SYNCClient>();
+
+			client.Connect(address, port, password, settings, onConnect);
+		}
+
 		public static void Instantiate(Object prefab) {
 			InstantiateInternal(prefab, Vector3.zero, Quaternion.identity, SYNCInstantiateMode.Standard, SYNCFloatAccuracy.Half);
 		}

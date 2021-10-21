@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using LiteNetLib;
@@ -34,9 +36,7 @@ namespace SYNC.Components {
 				Debug.LogWarning("[SYNC] Multiple clients detected, destroying last created", gameObject);
 				Destroy(this);
 			}
-		}
 
-		private void Start() {
 			foreach (SYNCIdentity syncIdentity in SYNCHelperInternal.FindExistingIdentities()) {
 				if (!SYNC.IsServer)
 					syncIdentity.NetID = SYNC.NextNetID;
@@ -44,27 +44,27 @@ namespace SYNC.Components {
 				SyncIdentities.Add(syncIdentity.NetID, syncIdentity);
 			}
 
-			if (_settings != null)
-				RegisterPrefabs();
-
-			InitializeNetwork();
+			if (_debugMode)
+				if (_settings != null)
+					InitializeNetwork("127.0.0.1", _settings.port, _settings.password);
+				else
+					InitializeNetwork("127.0.0.1", 5000, "Debug_key");
 		}
 
-		private void RegisterPrefabs() {
-			foreach (SYNCIdentity prefab in _settings.nonPlayerPrefabs)
-				_registeredPrefabs.Add(prefab.GetInstanceID(), prefab);
-		}
+		private void InitializeNetwork(string address, int port, string password) {
+			if (_settings == null) {
+				Debug.LogError("[SERVER] Does not have access to a settings object", gameObject);
+				return;
+			}
 
-		private void InitializeNetwork() {
 			_client = new NetManager(this);
 
-			if (_settings != null)
-				_settings.Apply(_client);
+			RegisterPrefabs();
+			_settings.Apply(_client);
 
 			_client.Start();
 
-			if (_debugMode)
-				_client.Connect("127.0.0.1", _settings != null ? _settings.port : 5000, "sample_app");
+			_client.Connect(address, port, password);
 
 			SYNCHelperInternal.RegisterNestedTypes(_packetProcessor);
 
@@ -76,12 +76,31 @@ namespace SYNC.Components {
 			_packetProcessor.SubscribeReusable<SYNCObjectDestroyMsg, NetPeer>(OnObjectDestroy);
 		}
 
+		private void RegisterPrefabs() {
+			foreach (SYNCIdentity prefab in _settings.nonPlayerPrefabs)
+				_registeredPrefabs.Add(prefab.GetInstanceID(), prefab);
+		}
+
 		private void Update() {
 			_client.PollEvents();
 		}
 
 		private void OnDestroy() {
 			_client?.Stop();
+			SYNC.IsClient = false;
+		}
+
+		internal void Connect(string address, int port, string password, SYNCSettings settings, Action onConnect) {
+			_settings = settings;
+
+			StartCoroutine(CoConnectToHost(address, port, password, onConnect));
+		}
+
+		private IEnumerator CoConnectToHost(string address, int port, string password, Action onConnect) {
+			InitializeNetwork(address, port, password);
+
+			yield return new WaitUntil(() => _client.IsRunning);
+			onConnect?.Invoke();
 		}
 
 		#region Message Callbacks

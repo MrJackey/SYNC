@@ -4,13 +4,19 @@ using UnityEngine;
 
 namespace SYNC {
 	[CreateAssetMenu(fileName = "new SYNCSettings", menuName = "SYNC/Settings", order = 0)]
-	internal class SYNCSettings : ScriptableObject {
+	public class SYNCSettings : ScriptableObject {
+		[Header("Server")]
 		public short tickRate;
+
+		[Header("Shared")]
 		public int port;
 
 		[Space]
 		public SYNCIdentity[] nonPlayerPrefabs;
 
-		public void Apply(NetManager instance) { }
+		[Header("Debug")]
+		public string password = "Debug_key";
+
+		internal void Apply(NetManager instance) { }
 	}
 }
