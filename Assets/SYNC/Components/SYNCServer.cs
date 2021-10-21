@@ -74,6 +74,7 @@ namespace SYNC.Components {
 			}
 		}
 
+		#region Message Senders
 		private void SendServerState() {
 			TransformPack[] syncTransforms = SYNCTransformHandler.GetData();
 			const DeliveryMethod deliveryMethod = DeliveryMethod.Unreliable;
@@ -91,7 +92,22 @@ namespace SYNC.Components {
 		}
 
 		internal void SendObjectInstantiate(Object prefab, Vector3 position, Quaternion rotation, SYNCInstantiateMode mode, SYNCFloatAccuracy accuracy) {
-			int prefabID = prefab.GetInstanceID();
+			int prefabID;
+			switch (prefab) {
+				case SYNCIdentity _:
+					prefabID = prefab.GetInstanceID();
+					break;
+				case GameObject go when go.TryGetComponent(out SYNCIdentity objIdentity):
+					prefabID = objIdentity.GetInstanceID();
+					break;
+				case Component comp when comp.TryGetComponent(out SYNCIdentity compIdentity):
+					prefabID = compIdentity.GetInstanceID();
+					break;
+				default:
+					Debug.LogError($"[SERVER] Trying to instantiate an object which does not have an SYNCIdentity: {prefab.name}", prefab);
+					return;
+			}
+
 			if (!_registeredPrefabs.TryGetValue(prefabID, out SYNCIdentity obj)) {
 				Debug.LogError($"[SERVER] Trying to instantiate an object which is not registered: {prefab.name}", prefab);
 				return;
@@ -124,6 +140,7 @@ namespace SYNC.Components {
 		private void OnDestroy() {
 			_server?.Stop();
 		}
+		#endregion
 
 		#region Network Callbacks
 		public void OnPeerConnected(NetPeer peer) {
