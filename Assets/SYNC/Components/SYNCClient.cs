@@ -5,11 +5,12 @@ using System.Net;
 using System.Net.Sockets;
 using LiteNetLib;
 using LiteNetLib.Utils;
-using SYNC.Messages;
-using SYNC.Utils;
+using Sync.Handlers;
+using Sync.Messages;
+using Sync.Utils;
 using UnityEngine;
 
-namespace SYNC.Components {
+namespace Sync.Components {
 	[DefaultExecutionOrder(-1)]
 	internal sealed class SYNCClient : MonoBehaviour, INetEventListener {
 		[SerializeField] private SYNCSettings _settings;

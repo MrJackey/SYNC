@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SYNC.Utils {
+namespace Sync.Utils {
 	public enum SYNCFloatAccuracy : ushort {
 		Half = 1,
 		Float = 2,

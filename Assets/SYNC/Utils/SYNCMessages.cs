@@ -1,6 +1,6 @@
-﻿using SYNC.Utils;
+﻿using Sync.Utils;
 
-namespace SYNC.Messages {
+namespace Sync.Messages {
 	internal class SYNCClientRegisterNetIDMsg {
 		public int ClientNetID { get; set; }
 	}

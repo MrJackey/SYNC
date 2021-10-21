@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 
-namespace SYNC.Utils {
+namespace Sync.Utils {
 	internal class SYNCPacket<T> where T : IPack {
 		internal T[] Content { get; }
 		internal int Size { get; }

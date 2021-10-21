@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace SYNC.Utils {
+namespace Sync.Utils {
 	internal class SYNCTickTimer {
 		private float _duration;
 		private Stopwatch _stopwatch;

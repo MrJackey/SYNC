@@ -1,4 +1,4 @@
-﻿namespace SYNC.Utils.Extensions {
+﻿namespace Sync.Utils.Extensions {
 	internal static class SYNCTransformOptionsExtensions {
 		internal static int GetByteSize(this SYNCTransformOptions options) {
 			int size = 0;

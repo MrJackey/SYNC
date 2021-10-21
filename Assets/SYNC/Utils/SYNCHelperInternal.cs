@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using LiteNetLib.Utils;
-using SYNC.Components;
+using Sync.Components;
 using UnityEngine;
 
-namespace SYNC.Utils {
+namespace Sync.Utils {
 	internal static class SYNCHelperInternal {
 		internal static void RegisterNestedTypes(NetPacketProcessor packetProcessor) {
 			packetProcessor.RegisterNestedType(TransformPack.Serialize, TransformPack.Deserialize);

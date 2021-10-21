@@ -1,10 +1,10 @@
 ﻿using System;
-using SYNC.Components;
-using SYNC.Utils;
+using Sync.Components;
+using Sync.Utils;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace SYNC {
+namespace Sync {
 	public static class SYNC {
 		private static int netID;
 		internal static int NextNetID => ++netID;

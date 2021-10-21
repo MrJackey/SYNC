@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace SYNC.Components {
+namespace Sync.Components {
 	public class SYNCIdentity : MonoBehaviour {
 		internal int NetID { get; set; }
 

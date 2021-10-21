@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
-using SYNC.Components;
-using SYNC.Utils;
+using Sync.Components;
+using Sync.Utils;
 
-namespace SYNC {
+namespace Sync.Handlers {
 	internal static class SYNCTransformHandler {
 		private static HashSet<int> _transformIDs = new HashSet<int>();
 

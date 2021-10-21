@@ -1,8 +1,8 @@
 ﻿using LiteNetLib.Utils;
-using SYNC.Utils.Extensions;
+using Sync.Utils.Extensions;
 using UnityEngine;
 
-namespace SYNC.Utils {
+namespace Sync.Utils {
 	internal interface IPack {
 		public int Size { get;  }
 	}

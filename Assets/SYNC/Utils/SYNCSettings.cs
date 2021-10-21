@@ -1,8 +1,8 @@
 ﻿using LiteNetLib;
-using SYNC.Components;
+using Sync.Components;
 using UnityEngine;
 
-namespace SYNC {
+namespace Sync {
 	[CreateAssetMenu(fileName = "new SYNCSettings", menuName = "SYNC/Settings", order = 0)]
 	public class SYNCSettings : ScriptableObject {
 		[Header("Server")]
