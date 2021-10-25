@@ -114,17 +114,32 @@ namespace Sync.Utils {
 
 		public Vector3 Position { get; }
 		public Quaternion Rotation { get; }
+		public int Parent { get; }
 
 		internal InstantiatePack(Vector3 position, Quaternion rotation, SYNCInstantiateOptions options) {
 			this.Position = position;
 			this.Rotation = rotation;
+			this.Parent = -1;
+			this.options = options;
+		}
+
+		internal InstantiatePack(int parentNetID, SYNCInstantiateOptions options) {
+			this.Position = Vector3.zero;
+			this.Rotation = Quaternion.identity;
+			this.Parent = parentNetID;
 			this.options = options;
 		}
 
 		public static void Serialize(NetDataWriter writer, InstantiatePack pack) {
 			writer.Put((ushort)pack.options);
+
 			if ((pack.options & SYNCInstantiateOptions.Standard) != 0)
 				return;
+
+			if ((pack.options & SYNCInstantiateOptions.Parent) != 0 || (pack.options & SYNCInstantiateOptions.ParentWorldSpace) != 0) {
+				writer.Put(pack.Parent);
+				return;
+			}
 
 			if ((pack.options & (SYNCInstantiateOptions.PositionOnly | SYNCInstantiateOptions.PositionAndRotation)) != 0) {
 				if ((pack.options & SYNCInstantiateOptions.Half) != 0)
@@ -140,6 +155,12 @@ namespace Sync.Utils {
 
 		public static InstantiatePack Deserialize(NetDataReader reader) {
 			SYNCInstantiateOptions options = (SYNCInstantiateOptions)reader.GetUShort();
+
+			if ((options & SYNCInstantiateOptions.Parent) != 0 || (options & SYNCInstantiateOptions.ParentWorldSpace) != 0) {
+				int parentNetID = reader.GetInt();
+				return new InstantiatePack(parentNetID, options);
+			}
+
 			Vector3 position = Vector3.zero;
 			Quaternion rotation = Quaternion.identity;
 

@@ -130,13 +130,19 @@ namespace Sync.Components {
 		}
 
 		private void OnObjectInstantiate(SYNCObjectInstantiateMsg msg, NetPeer _) {
-			if (!_registeredPrefabs.TryGetValue(msg.PrefabID, out SYNCIdentity obj)) {
+			if (!_registeredPrefabs.TryGetValue(msg.PrefabID, out SYNCIdentity prefab)) {
 				Debug.LogError($"[CLIENT] Received an instantiate message with unknown id: {msg.PrefabID}");
 				return;
 			}
 
 			if (!SYNC.IsServer) {
-				SYNCIdentity syncComponent = Instantiate(obj, msg.Info.Position, msg.Info.Rotation);
+				SYNCIdentity syncComponent;
+
+				if ((msg.Info.options & SYNCInstantiateOptions.Parent) != 0 || (msg.Info.options & SYNCInstantiateOptions.ParentWorldSpace) != 0)
+					syncComponent = Instantiate(prefab, SyncIdentities[msg.Info.Parent].transform, (msg.Info.options & SYNCInstantiateOptions.ParentWorldSpace) != 0);
+				else
+					syncComponent = Instantiate(prefab, msg.Info.Position, msg.Info.Rotation);
+
 				syncComponent.NetID = msg.NetID;
 				SyncIdentities.Add(msg.NetID, syncComponent);
 			}

@@ -34,24 +34,40 @@ namespace Sync {
 		}
 
 		public static void Instantiate(Object prefab) {
-			InstantiateInternal(prefab, Vector3.zero, Quaternion.identity, SYNCInstantiateMode.Standard, SYNCFloatAccuracy.Half);
+			Instantiate_Internal(prefab, Vector3.zero, Quaternion.identity, SYNCInstantiateMode.Standard, SYNCFloatAccuracy.Half);
 		}
 
 		public static void Instantiate(Object prefab, Vector3 position, SYNCFloatAccuracy accuracy = SYNCFloatAccuracy.Half) {
-			InstantiateInternal(prefab, position, Quaternion.identity, SYNCInstantiateMode.PositionOnly, accuracy);
+			Instantiate_Internal(prefab, position, Quaternion.identity, SYNCInstantiateMode.PositionOnly, accuracy);
 		}
 
 		public static void Instantiate(Object prefab, Quaternion rotation, SYNCFloatAccuracy accuracy = SYNCFloatAccuracy.Half) {
-			InstantiateInternal(prefab, Vector3.zero, rotation, SYNCInstantiateMode.RotationOnly, accuracy);
+			Instantiate_Internal(prefab, Vector3.zero, rotation, SYNCInstantiateMode.RotationOnly, accuracy);
 		}
 
 		public static void Instantiate(Object prefab, Vector3 position, Quaternion rotation, SYNCFloatAccuracy accuracy = SYNCFloatAccuracy.Half) {
-			InstantiateInternal(prefab, position, rotation, SYNCInstantiateMode.PositionAndRotation, accuracy);
+			Instantiate_Internal(prefab, position, rotation, SYNCInstantiateMode.PositionAndRotation, accuracy);
 		}
 
-		private static void InstantiateInternal(Object prefab, Vector3 position, Quaternion rotation, SYNCInstantiateMode mode, SYNCFloatAccuracy accuracy) {
+		public static void Instantiate(Object prefab, Object parent, bool instantiateInWorldSpace = false) {
+			SYNCIdentity syncIdentity = SYNCHelperInternal.GetSYNCIdentity(parent);
+
+			if (syncIdentity == default) {
+				Debug.LogError($"[SYNC] Instantiate parent does not have a SYNCIdentity {parent.name}", parent);
+				return;
+			}
+
+			Instantiate(prefab, syncIdentity.NetID, instantiateInWorldSpace);
+		}
+
+		public static void Instantiate(Object prefab, int parentNetID, bool instantiateInWorldSpace = false) {
 			if (IsServer)
-				SYNCServer.Instance.SendObjectInstantiate(prefab, position, rotation, mode, accuracy);
+				SYNCServer.Instance.Instantiate(prefab, parentNetID, instantiateInWorldSpace);
+		}
+
+		private static void Instantiate_Internal(Object prefab, Vector3 position, Quaternion rotation, SYNCInstantiateMode mode, SYNCFloatAccuracy accuracy) {
+			if (IsServer)
+				SYNCServer.Instance.Instantiate(prefab, position, rotation, mode, accuracy);
 		}
 
 		public static void Destroy() {

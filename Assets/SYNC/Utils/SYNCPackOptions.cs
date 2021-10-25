@@ -52,6 +52,8 @@ namespace Sync.Utils {
 		PositionOnly = 8,
 		RotationOnly = 16,
 		PositionAndRotation = 32,
+		Parent = 64,
+		ParentWorldSpace = 128,
 	}
 
 	[Flags]
@@ -62,6 +64,8 @@ namespace Sync.Utils {
 		PositionOnly = SYNCInstantiateMode.PositionOnly,
 		RotationOnly = SYNCInstantiateMode.RotationOnly,
 		PositionAndRotation = SYNCInstantiateMode.PositionAndRotation,
+		Parent = SYNCInstantiateMode.Parent,
+		ParentWorldSpace = SYNCInstantiateMode.ParentWorldSpace,
 	}
 
 	internal enum SYNCObjectType : byte {

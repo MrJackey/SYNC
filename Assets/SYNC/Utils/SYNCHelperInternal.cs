@@ -43,5 +43,28 @@ namespace Sync.Utils {
 		internal static ObjectPack[] PackifyObjects(IEnumerable<object> objects) {
 			return objects.Select(obj => new ObjectPack(obj)).ToArray();
 		}
+
+		internal static (int ID, SYNCIdentity prefab) GetMatchingSyncPrefab(Object obj,  Dictionary<int,SYNCIdentity> prefabs) {
+			SYNCIdentity identity = GetSYNCIdentity(obj);
+			if (identity == default)
+				return default;
+
+			int prefabID = identity.GetInstanceID();
+			if (!prefabs.TryGetValue(prefabID, out SYNCIdentity syncIdentity)) {
+				Debug.LogError($"[SYNC] Failed to find prefab {obj.name}", obj);
+				return default;
+			}
+
+			return (prefabID, syncIdentity);
+		}
+
+		internal static SYNCIdentity GetSYNCIdentity(Object obj) {
+			return obj switch {
+				SYNCIdentity syncComp => syncComp,
+				GameObject go when go.TryGetComponent(out SYNCIdentity objIdentity) => objIdentity,
+				Component comp when comp.TryGetComponent(out SYNCIdentity compIdentity) => compIdentity,
+				_ => default,
+			};
+		}
 	}
 }

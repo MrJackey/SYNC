@@ -129,40 +129,49 @@ namespace Sync.Components {
 			}
 		}
 
-		internal void SendObjectInstantiate(Object prefab, Vector3 position, Quaternion rotation, SYNCInstantiateMode mode, SYNCFloatAccuracy accuracy) {
-			int prefabID;
-			switch (prefab) {
-				case SYNCIdentity _:
-					prefabID = prefab.GetInstanceID();
-					break;
-				case GameObject go when go.TryGetComponent(out SYNCIdentity objIdentity):
-					prefabID = objIdentity.GetInstanceID();
-					break;
-				case Component comp when comp.TryGetComponent(out SYNCIdentity compIdentity):
-					prefabID = compIdentity.GetInstanceID();
-					break;
-				default:
-					Debug.LogError($"[SERVER] Trying to instantiate an object which does not have an SYNCIdentity: {prefab.name}", prefab);
-					return;
-			}
+		internal void Instantiate(Object obj, Vector3 position, Quaternion rotation, SYNCInstantiateMode mode, SYNCFloatAccuracy accuracy) {
+			(int prefabID, SYNCIdentity prefab) = SYNCHelperInternal.GetMatchingSyncPrefab(obj, _registeredPrefabs);
 
-			if (!_registeredPrefabs.TryGetValue(prefabID, out SYNCIdentity obj)) {
-				Debug.LogError($"[SERVER] Trying to instantiate an object which is not registered: {prefab.name}", prefab);
+			if (prefab == null) {
+				Debug.LogError($"[SERVER] Trying to instantiate an object which does not have an SYNCIdentity: {obj.name}", obj);
 				return;
 			}
 
-			SYNCIdentity syncComponent = Instantiate(obj, position, rotation);
-			syncComponent.NetID = SYNC.NextNetID;
-			SyncIdentities.Add(syncComponent.NetID, syncComponent);
-
-			if (SYNC.IsClient)
-				SYNCClient.Instance.SyncIdentities.Add(syncComponent.NetID, syncComponent);
+			SYNCIdentity syncComponent = Instantiate(prefab, position, rotation);
 
 			InstantiatePack pack = new InstantiatePack(
 				position,
 				rotation,
 				(SYNCInstantiateOptions)((ushort)mode | (ushort)accuracy)
 			);
+
+			SendObjectInstantiate(pack, syncComponent, prefabID);
+		}
+
+		internal void Instantiate(Object obj, int parentNetID, bool instantiateInWorldSpace) {
+			(int prefabID, SYNCIdentity prefab) = SYNCHelperInternal.GetMatchingSyncPrefab(obj, _registeredPrefabs);
+
+			if (prefab == null) {
+				Debug.LogError($"[SERVER] Trying to instantiate an object which does not have an SYNCIdentity: {obj.name}", obj);
+				return;
+			}
+
+			SYNCIdentity syncComponent = Instantiate(prefab, SyncIdentities[parentNetID].transform, instantiateInWorldSpace);
+
+			InstantiatePack pack = new InstantiatePack(
+				parentNetID,
+				instantiateInWorldSpace ? SYNCInstantiateOptions.ParentWorldSpace : SYNCInstantiateOptions.Parent
+			);
+
+			SendObjectInstantiate(pack, syncComponent, prefabID);
+		}
+
+		private void SendObjectInstantiate(InstantiatePack pack, SYNCIdentity syncComponent, int prefabID) {
+			syncComponent.NetID = SYNC.NextNetID;
+			SyncIdentities.Add(syncComponent.NetID, syncComponent);
+
+			if (SYNC.IsClient)
+				SYNCClient.Instance.SyncIdentities.Add(syncComponent.NetID, syncComponent);
 
 			SYNCObjectInstantiateMsg msg = new SYNCObjectInstantiateMsg {NetID = syncComponent.NetID, PrefabID = prefabID, Info = pack};
 
