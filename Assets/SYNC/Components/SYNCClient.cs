@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using LiteNetLib;
@@ -77,6 +76,7 @@ namespace Sync.Components {
 			_packetProcessor.SubscribeReusable<SYNCServerStateMsg, NetPeer>(OnNewServerState);
 			_packetProcessor.SubscribeReusable<SYNCObjectInstantiateMsg, NetPeer>(OnObjectInstantiate);
 			_packetProcessor.SubscribeReusable<SYNCObjectDestroyMsg, NetPeer>(OnObjectDestroy);
+			_packetProcessor.SubscribeReusable<SYNCRPCMsg, NetPeer>(OnRPC);
 		}
 
 		private void RegisterPrefabs() {
@@ -107,11 +107,20 @@ namespace Sync.Components {
 		}
 
 		internal void SendRPC(int netID, int behaviourID, string methodName, object[] args) {
-			ObjectPack[] parameters = args.Select(arg => new ObjectPack(arg)).ToArray();
+			ObjectPack[] parameters = SYNCHelperInternal.PackifyObjects(args);
 			_packetProcessor.Send(Server, new SYNCRPCMsg() {NetID = netID, BehaviourID = behaviourID, MethodName = methodName, Parameters = parameters}, DeliveryMethod.ReliableOrdered);
 		}
 
 		#region Message Callbacks
+		private void OnRegisterNetID(SYNCClientRegisterNetIDMsg msg, NetPeer _) {
+			Debug.Log($"[CLIENT] Connected with ClientNetID: {msg.ClientNetID}");
+			_clientNetID = msg.ClientNetID;
+		}
+
+		private void OnClientJoined(SYNCClientJoinedMsg msg, NetPeer _) { }
+
+		private void OnClientDisconnect(SYNCClientDisconnectMsg msg, NetPeer _) { }
+
 		private void OnNewServerState(SYNCServerStateMsg msg, NetPeer _) {
 			// Skip old packages arriving late
 			if (msg.tick >= _lastReceivedServerTick) {
@@ -139,15 +148,8 @@ namespace Sync.Components {
 			SyncIdentities.Remove(msg.NetID);
 		}
 
-		private void OnRegisterNetID(SYNCClientRegisterNetIDMsg msg, NetPeer _) {
-			Debug.Log($"[CLIENT] Connected with ClientNetID: {msg.ClientNetID}");
-			_clientNetID = msg.ClientNetID;
-		}
-
-		private void OnClientJoined(SYNCClientJoinedMsg msg, NetPeer _) {
-		}
-
-		private void OnClientDisconnect(SYNCClientDisconnectMsg msg, NetPeer _) {
+		private void OnRPC(SYNCRPCMsg msg, NetPeer _) {
+			SyncIdentities[msg.NetID].ExecuteRPC(msg);
 		}
 		#endregion
 

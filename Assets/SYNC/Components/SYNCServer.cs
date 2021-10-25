@@ -174,6 +174,16 @@ namespace Sync.Components {
 			Destroy(SyncIdentities[msg.NetID].gameObject);
 			_packetProcessor.Send(_server, msg, DeliveryMethod.ReliableOrdered);
 		}
+
+		public void SendRPC(int clientID, int netID, int behaviourID, string methodName, object[] args) {
+			ObjectPack[] parameters = SYNCHelperInternal.PackifyObjects(args);
+			_packetProcessor.Send(_server.GetPeerById(clientID), new SYNCRPCMsg() {NetID = netID, BehaviourID = behaviourID, MethodName = methodName, Parameters = parameters}, DeliveryMethod.ReliableOrdered);
+		}
+
+		public void SendRPC(int netID, int behaviourID, string methodName, object[] args) {
+			ObjectPack[] parameters = SYNCHelperInternal.PackifyObjects(args);
+			_packetProcessor.Send(_server, new SYNCRPCMsg() {NetID = netID, BehaviourID = behaviourID, MethodName = methodName, Parameters = parameters}, DeliveryMethod.ReliableOrdered);
+		}
 		#endregion
 
 		#region Network Callbacks

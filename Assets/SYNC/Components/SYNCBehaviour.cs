@@ -19,9 +19,30 @@ namespace Sync.Components {
 		/// </summary>
 		/// <param name="methodName"></param>
 		/// <param name="args"></param>
-		public void ServerInvoke(string methodName, params object[] args) {
+		public void InvokeServer(string methodName, params object[] args) {
 			if (SYNC.IsClient)
 				SYNCClient.Instance.SendRPC(NetID, GetInstanceID(), methodName, args);
+		}
+
+		/// <summary>
+		/// Send an RPC to a specific client instance
+		/// </summary>
+		/// <param name="clientID"></param>
+		/// <param name="methodName"></param>
+		/// <param name="args"></param>
+		public void InvokeClients(int clientID, string methodName, params object[] args) {
+			if (SYNC.IsServer)
+				SYNCServer.Instance.SendRPC(clientID, NetID, GetInstanceID(), methodName, args);
+		}
+
+		/// <summary>
+		/// Send an RPC to all connected clients' instances
+		/// </summary>
+		/// <param name="methodName"></param>
+		/// <param name="args"></param>
+		public void InvokeClients(string methodName, params object[] args) {
+			if (SYNC.IsServer)
+				SYNCServer.Instance.SendRPC(NetID, GetInstanceID(), methodName, args);
 		}
 
 		internal void ExecuteRPC(SYNCRPCMsg msg) {

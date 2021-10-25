@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using LiteNetLib.Utils;
 using Sync.Components;
 using UnityEngine;
@@ -37,6 +38,10 @@ namespace Sync.Utils {
 				result.Add(new SYNCPacket<TPack>(acc.ToArray()));
 
 			return result;
+		}
+
+		internal static ObjectPack[] PackifyObjects(IEnumerable<object> objects) {
+			return objects.Select(obj => new ObjectPack(obj)).ToArray();
 		}
 	}
 }
