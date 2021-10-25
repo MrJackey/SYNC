@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using LiteNetLib;
@@ -102,6 +103,11 @@ namespace Sync.Components {
 
 			yield return new WaitUntil(() => _client.IsRunning);
 			onConnect?.Invoke();
+		}
+
+		internal void SendRPC(int netID, int behaviourID, string methodName, object[] args) {
+			ObjectPack[] parameters = args.Select(arg => new ObjectPack(arg)).ToArray();
+			_packetProcessor.Send(Server, new SYNCRPCMsg() {NetID = netID, BehaviourID = behaviourID, MethodName = methodName, Parameters = parameters}, DeliveryMethod.ReliableOrdered);
 		}
 
 		#region Message Callbacks

@@ -69,6 +69,8 @@ namespace Sync.Components {
 			tickTimer = new SYNCTickTimer(tickRate);
 
 			SYNCHelperInternal.RegisterNestedTypes(_packetProcessor);
+
+			_packetProcessor.SubscribeReusable<SYNCRPCMsg>(OnRPC);
 		}
 
 		private void RegisterPrefabs() {
@@ -103,6 +105,10 @@ namespace Sync.Components {
 			yield return new WaitUntil(() => _server.IsRunning);
 
 			SYNC.Connect("127.0.0.1", _settings.port, password, settings, onConnect);
+		}
+
+		private void OnRPC(SYNCRPCMsg msg) {
+			SyncIdentities[msg.NetID].ExecuteRPC(msg);
 		}
 
 		#region Message Senders

@@ -28,4 +28,11 @@ namespace Sync.Messages {
 		public uint tick;
 		public TransformPack[] SYNCTransforms { get; set; }
 	}
+
+	internal class SYNCRPCMsg {
+		public int NetID { get; set; }
+		public int BehaviourID { get; set; }
+		public string MethodName { get; set; }
+		public ObjectPack[] Parameters { get; set; }
+	}
 }

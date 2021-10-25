@@ -10,6 +10,7 @@ namespace Sync.Utils {
 			packetProcessor.RegisterNestedType(InstantiatePack.Serialize, InstantiatePack.Deserialize);
 			packetProcessor.RegisterNestedType(Vector3Pack.Serialize, Vector3Pack.Deserialize);
 			packetProcessor.RegisterNestedType(Vector2Pack.Serialize, Vector2Pack.Deserialize);
+			packetProcessor.RegisterNestedType(ObjectPack.Serialize, ObjectPack.Deserialize);
 		}
 
 		internal static SYNCIdentity[] FindExistingIdentities() {

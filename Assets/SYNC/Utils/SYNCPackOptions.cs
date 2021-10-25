@@ -6,7 +6,7 @@ namespace Sync.Utils {
 		Float = 2,
 	}
 
-	public enum SYNCPositionPrecision : ushort {
+	internal enum SYNCPositionPrecision : ushort {
 		Ignore = 1,
 		Vector3Half = 2,
 		Vector3Float = 4,
@@ -14,12 +14,12 @@ namespace Sync.Utils {
 		Vector2Float = 16,
 	}
 
-	public enum SYNCRotationPrecision : ushort {
+	internal enum SYNCRotationPrecision : ushort {
 		Ignore = 32,
 		Quaternion = 64,
 	}
 
-	public enum SYNCScalePrecision : ushort {
+	internal enum SYNCScalePrecision : ushort {
 		Ignore = 128,
 		Vector3Half = 256,
 		Vector3Float = 512,
@@ -30,7 +30,7 @@ namespace Sync.Utils {
 	}
 
 	[Flags]
-	public enum SYNCTransformOptions : ushort {
+	internal enum SYNCTransformOptions : ushort {
 		PositionIgnore = SYNCPositionPrecision.Ignore,
 		PositionVector3Half = SYNCPositionPrecision.Vector3Half,
 		PositionVector3Float = SYNCPositionPrecision.Vector3Float,
@@ -47,7 +47,7 @@ namespace Sync.Utils {
 		ScaleUniformFloat = SYNCScalePrecision.UniformFloat,
 	}
 
-	public enum SYNCInstantiateMode : ushort {
+	internal enum SYNCInstantiateMode : ushort {
 		Standard = 4,
 		PositionOnly = 8,
 		RotationOnly = 16,
@@ -55,12 +55,30 @@ namespace Sync.Utils {
 	}
 
 	[Flags]
-	public enum SYNCInstantiateOptions : ushort {
+	internal enum SYNCInstantiateOptions : ushort {
 		Half = SYNCFloatAccuracy.Half,
 		Float = SYNCFloatAccuracy.Float,
 		Standard = SYNCInstantiateMode.Standard,
 		PositionOnly = SYNCInstantiateMode.PositionOnly,
 		RotationOnly = SYNCInstantiateMode.RotationOnly,
 		PositionAndRotation = SYNCInstantiateMode.PositionAndRotation,
+	}
+
+	internal enum SYNCObjectType : byte {
+		String,
+		Bool,
+		Byte,
+		SByte,
+		Short,
+		UShort,
+		Int,
+		UInt,
+		Long,
+		ULong,
+		Float,
+		Double,
+		Char,
+		Vector3,
+		Vector2,
 	}
 }
