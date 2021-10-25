@@ -12,6 +12,7 @@ using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace Sync.Components {
+	[AddComponentMenu("SYNC/SYNC Server")]
 	[DefaultExecutionOrder(-2)]
 	internal sealed class SYNCServer : MonoBehaviour, INetEventListener {
 		internal static SYNCServer Instance { get; private set; }

@@ -3,6 +3,8 @@ using Sync.Messages;
 using UnityEngine;
 
 namespace Sync.Components {
+	[AddComponentMenu("SYNC/SYNC Identity")]
+	[DisallowMultipleComponent]
 	public class SYNCIdentity : MonoBehaviour {
 		internal int NetID { get; set; }
 

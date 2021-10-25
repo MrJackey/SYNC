@@ -3,6 +3,7 @@ using Sync.Utils;
 using UnityEngine;
 
 namespace Sync.Components {
+	[AddComponentMenu("SYNC/SYNC Transform")]
 	[RequireComponent(typeof(Transform), typeof(SYNCIdentity))]
 	internal sealed class SYNCTransform : MonoBehaviour {
 		[SerializeField] private SYNCPositionPrecision _positionPrecision = SYNCPositionPrecision.Vector3Half;

@@ -12,6 +12,7 @@ using Sync.Utils;
 using UnityEngine;
 
 namespace Sync.Components {
+	[AddComponentMenu("SYNC/SYNC Client")]
 	[DefaultExecutionOrder(-1)]
 	internal sealed class SYNCClient : MonoBehaviour, INetEventListener {
 		[SerializeField] private SYNCSettings _settings;
