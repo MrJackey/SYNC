@@ -28,7 +28,9 @@ namespace Sync.Handlers {
 
 		internal static void ApplyData(TransformPack[] msg) {
 			foreach (TransformPack pack in msg)
-				SYNCClient.Instance.SyncIdentities[pack.netID].SYNCTransform.ApplyData(pack);
+				// Workaround due to ServerState messages appearing before instantiating
+				if (SYNCClient.Instance.SyncIdentities.TryGetValue(pack.netID, out SYNCIdentity syncIdentity))
+					syncIdentity.SYNCTransform.ApplyData(pack);
 		}
 	}
 }
