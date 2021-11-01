@@ -16,14 +16,24 @@ namespace Sync.Components {
 		private void Awake() {
 			SyncIdentity = GetComponent<SYNCIdentity>();
 			SyncIdentity.SYNCTransform = this;
+
+			SyncIdentity.NetIDAssigned += OnNetIDAssigned;
 		}
 
-		private void Start() {
-			SYNCTransformHandler.Register(SyncIdentity.NetID);
+		private void OnNetIDAssigned(int netID) {
+			SYNCTransformHandler.Register(netID);
+		}
+
+		}
+
 		}
 
 		private void OnDestroy() {
-			SYNCTransformHandler.UnRegister(SyncIdentity.NetID);
+			if (NetID != 0)
+				SYNCTransformHandler.UnRegister(NetID);
+
+			if (SyncIdentity != null)
+				SyncIdentity.NetIDAssigned -= OnNetIDAssigned;
 		}
 
 		internal TransformPack GetData() {

@@ -41,7 +41,7 @@ namespace Sync.Components {
 
 			foreach (SYNCIdentity syncIdentity in SYNCHelperInternal.FindExistingIdentities()) {
 				if (!SYNC.IsServer)
-					syncIdentity.NetID = SYNC.NextNetID;
+					syncIdentity.AssignNetID(SYNC.GetNextNetID());
 
 				SyncIdentities.Add(syncIdentity.NetID, syncIdentity);
 			}
@@ -143,7 +143,7 @@ namespace Sync.Components {
 				else
 					syncComponent = Instantiate(prefab, msg.Info.Position, msg.Info.Rotation);
 
-				syncComponent.NetID = msg.NetID;
+				syncComponent.AssignNetID(msg.NetID);
 				SyncIdentities.Add(msg.NetID, syncComponent);
 			}
 		}

@@ -43,7 +43,7 @@ namespace Sync.Components {
 			}
 
 			foreach (SYNCIdentity syncIdentity in SYNCHelperInternal.FindExistingIdentities()) {
-				syncIdentity.NetID = SYNC.NextNetID;
+				syncIdentity.AssignNetID(SYNC.GetNextNetID());
 				SyncIdentities.Add(syncIdentity.NetID, syncIdentity);
 			}
 
@@ -167,7 +167,7 @@ namespace Sync.Components {
 		}
 
 		private void SendObjectInstantiate(InstantiatePack pack, SYNCIdentity syncComponent, int prefabID) {
-			syncComponent.NetID = SYNC.NextNetID;
+			syncComponent.AssignNetID(SYNC.GetNextNetID());
 			SyncIdentities.Add(syncComponent.NetID, syncComponent);
 
 			if (SYNC.IsClient)

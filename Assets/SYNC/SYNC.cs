@@ -7,10 +7,11 @@ using Object = UnityEngine.Object;
 namespace Sync {
 	public static class SYNC {
 		private static int netID;
-		internal static int NextNetID => ++netID;
 
 		public static bool IsServer { get; internal set; }
 		public static bool IsClient { get; internal set; }
+
+		internal static int GetNextNetID() => ++netID;
 
 		public static void Host(string password, SYNCSettings settings, Action onConnect = default) {
 			if (IsServer && SYNCServer.Instance.IsRunning) {
