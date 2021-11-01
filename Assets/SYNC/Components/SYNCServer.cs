@@ -49,12 +49,12 @@ namespace Sync.Components {
 
 			if (_startOnAwake)
 				if (_settings != null)
-					InitializeNetwork(_settings.port, _settings.tickRate);
+					InitializeNetwork(_settings.port, _settings.sendRate);
 				else
 					InitializeNetwork(5000, 60);
 		}
 
-		private void InitializeNetwork(int port, short tickRate) {
+		private void InitializeNetwork(int port, int sendRate) {
 			if (_settings == null) {
 				Debug.LogError("[SERVER] Does not have access to a settings object", gameObject);
 				return;
@@ -67,7 +67,7 @@ namespace Sync.Components {
 
 			_server.Start(port);
 
-			tickTimer = new SYNCTickTimer(tickRate);
+			tickTimer = new SYNCTickTimer(sendRate);
 
 			SYNCHelperInternal.RegisterNestedTypes(_packetProcessor);
 
@@ -98,7 +98,7 @@ namespace Sync.Components {
 			_settings = settings;
 			_password = password;
 
-			InitializeNetwork(settings.port, settings.tickRate);
+			InitializeNetwork(settings.port, settings.sendRate);
 			StartCoroutine(CoConnectToSelf(password, settings, onConnect));
 		}
 

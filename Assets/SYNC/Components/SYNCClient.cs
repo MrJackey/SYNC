@@ -85,7 +85,8 @@ namespace Sync.Components {
 		}
 
 		private void Update() {
-			_client.PollEvents();
+			if (IsConnected)
+				_client.PollEvents();
 		}
 
 		private void OnDestroy() {

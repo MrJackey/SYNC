@@ -15,7 +15,7 @@ namespace Sync.Utils {
 
 		public bool Elapsed => Time >= _duration;
 
-		public SYNCTickTimer(short tickRate) {
+		public SYNCTickTimer(int tickRate) {
 			_stopwatch = new Stopwatch();
 			_stopwatch.Start();
 

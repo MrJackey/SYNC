@@ -6,10 +6,10 @@ namespace Sync {
 	[CreateAssetMenu(fileName = "new SYNCSettings", menuName = "SYNC/Settings", order = 0)]
 	public class SYNCSettings : ScriptableObject {
 		[Header("Server")]
-		public short tickRate;
 
 		[Header("Shared")]
 		public int port;
+		public int sendRate;
 
 		[Space]
 		public SYNCIdentity[] nonPlayerPrefabs;
