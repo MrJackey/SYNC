@@ -26,14 +26,14 @@ namespace Sync.Utils {
 			List<TPack> acc = new List<TPack>();
 
 			foreach (TPack pack in packs) {
-				if (remainingPacketSize < pack.Size) {
+				if (remainingPacketSize < pack.ByteSize) {
 					result.Add(new SYNCPacket<TPack>(acc.ToArray()));
 					acc.Clear();
 					remainingPacketSize = maxPacketSize;
 				}
 
 				acc.Add(pack);
-				remainingPacketSize -= pack.Size;
+				remainingPacketSize -= pack.ByteSize;
 			}
 
 			if (acc.Count > 0)

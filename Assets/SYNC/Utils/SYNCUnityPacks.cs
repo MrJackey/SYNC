@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Sync.Utils {
 	internal interface IPack {
-		public int Size { get;  }
+		public int ByteSize { get;  }
 	}
 
 	internal struct TransformPack : IPack {
@@ -17,7 +17,7 @@ namespace Sync.Utils {
 		public Quaternion Rotation { get; }
 		public Vector3 Scale { get; }
 
-		public int Size => sizeof(int) // netID
+		public int ByteSize => sizeof(int) // netID
 		                   + sizeof(ushort) // options ushort
 		                   + options.GetByteSize();
 
@@ -116,7 +116,7 @@ namespace Sync.Utils {
 		public AnimatorParameterPack[] ParameterPacks { get; }
 		public byte ParameterCount => (byte)ParameterPacks.Length;
 
-		public int Size => sizeof(int) + ParameterPacks.Sum(pack => pack.Size);
+		public int ByteSize => sizeof(int) + ParameterPacks.Sum(pack => pack.ByteSize);
 
 		internal AnimatorPack(int netID, AnimatorParameterPack[] parameterPacks) {
 			this.NetID = netID;
@@ -152,7 +152,7 @@ namespace Sync.Utils {
 		public bool BoolValue { get; }
 		public int IntValue { get; }
 
-		public int Size => sizeof(int)
+		public int ByteSize => sizeof(int)
 		                   + sizeof(short)
 		                   + Type switch {
 			                   AnimatorControllerParameterType.Float => sizeof(float),

@@ -7,7 +7,7 @@ namespace Sync.Utils {
 
 		internal SYNCPacket(T[] content) {
 			Content = content;
-			Size = Content.Sum(pack => pack.Size);
+			Size = Content.Sum(pack => pack.ByteSize);
 		}
 	}
 }
