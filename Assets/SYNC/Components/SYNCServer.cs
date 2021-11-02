@@ -115,6 +115,7 @@ namespace Sync.Components {
 		#region Message Senders
 		private void SendServerState() {
 			TransformPack[] syncTransforms = SYNCTransformHandler.GetData();
+			AnimatorPack[] syncAnimators = SYNCAnimatorHandler.GetData();
 			const DeliveryMethod deliveryMethod = DeliveryMethod.Unreliable;
 
 			foreach (NetPeer peer in _server.ConnectedPeerList) {
@@ -123,9 +124,13 @@ namespace Sync.Components {
 				                    - 2 // Not sure where these 2 bytes are being added to the writer
 				                    - SYNCServerStateMsg.HeaderSize;
 
-				List<SYNCPacket<TransformPack>> packets = SYNCHelperInternal.DividePacksIntoPackets(syncTransforms, maxPacketSize);
-				foreach (SYNCPacket<TransformPack> packet in packets)
-					_packetProcessor.Send(peer, new SYNCServerStateMsg {tick = _serverTick, SYNCTransforms = packet.Content}, deliveryMethod);
+				List<SYNCPacket<TransformPack>> transformPackets = SYNCHelperInternal.DividePacksIntoPackets(syncTransforms, maxPacketSize);
+				foreach (SYNCPacket<TransformPack> packet in transformPackets)
+					_packetProcessor.Send(peer, new SYNCServerStateMsg {tick = _serverTick, SYNCTransforms = packet.Content, SYNCAnimators = new AnimatorPack[0]}, deliveryMethod);
+
+				List<SYNCPacket<AnimatorPack>> animatorPackets = SYNCHelperInternal.DividePacksIntoPackets(syncAnimators, maxPacketSize);
+				foreach (SYNCPacket<AnimatorPack> packet in animatorPackets)
+					_packetProcessor.Send(peer, new SYNCServerStateMsg {tick = _serverTick, SYNCTransforms = new TransformPack[0], SYNCAnimators = packet.Content}, deliveryMethod);
 			}
 		}
 

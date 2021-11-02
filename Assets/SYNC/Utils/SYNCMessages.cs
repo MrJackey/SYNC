@@ -27,6 +27,7 @@ namespace Sync.Messages {
 		public static int HeaderSize => sizeof(uint);
 		public uint tick;
 		public TransformPack[] SYNCTransforms { get; set; }
+		public AnimatorPack[] SYNCAnimators { get; set; }
 	}
 
 	internal class SYNCRPCMsg {

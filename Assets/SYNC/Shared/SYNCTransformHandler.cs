@@ -19,7 +19,7 @@ namespace Sync.Handlers {
 
 			int i = 0;
 			foreach (int ID in _transformIDs) {
-				packs[i] = SYNCServer.Instance.SyncIdentities[ID].SYNCTransform.GetData();
+				packs[i] = SYNCServer.Instance.SyncIdentities[ID].SyncTransform.GetData();
 				i++;
 			}
 
@@ -30,7 +30,7 @@ namespace Sync.Handlers {
 			foreach (TransformPack pack in msg)
 				// Workaround due to ServerState messages appearing before instantiating
 				if (SYNCClient.Instance.SyncIdentities.TryGetValue(pack.netID, out SYNCIdentity syncIdentity))
-					syncIdentity.SYNCTransform.ApplyData(pack);
+					syncIdentity.SyncTransform.ApplyData(pack);
 		}
 	}
 }

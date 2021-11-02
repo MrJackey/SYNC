@@ -1,4 +1,6 @@
-﻿using LiteNetLib.Utils;
+﻿using System;
+using System.Linq;
+using LiteNetLib.Utils;
 using Sync.Utils.Extensions;
 using UnityEngine;
 
@@ -107,6 +109,109 @@ namespace Sync.Utils {
 
 			return new TransformPack(netID, options, position, rotation, scale);
 		}
+	}
+
+	internal struct AnimatorPack : IPack {
+		public int NetID { get; }
+		public AnimatorParameterPack[] ParameterPacks { get; }
+		public byte ParameterCount => (byte)ParameterPacks.Length;
+
+		public int Size => sizeof(int) + ParameterPacks.Sum(pack => pack.Size);
+
+		internal AnimatorPack(int netID, AnimatorParameterPack[] parameterPacks) {
+			this.NetID = netID;
+			this.ParameterPacks = parameterPacks;
+		}
+
+		public static void Serialize(NetDataWriter writer, AnimatorPack pack) {
+			writer.Put(pack.NetID);
+			writer.Put(pack.ParameterCount);
+
+			foreach (AnimatorParameterPack parameterPack in pack.ParameterPacks)
+				AnimatorParameterPack.Serialize(writer, parameterPack);
+		}
+
+		public static AnimatorPack Deserialize(NetDataReader reader) {
+			int netID = reader.GetInt();
+			int parameterCount = reader.GetByte();
+
+			AnimatorParameterPack[] parameterPacks = new AnimatorParameterPack[parameterCount];
+
+			for (int i = 0; i < parameterCount; i++)
+				parameterPacks[i] = AnimatorParameterPack.Deserialize(reader);
+
+			return new AnimatorPack(netID, parameterPacks);
+		}
+	}
+
+	internal struct AnimatorParameterPack : IPack {
+		public int NameHash { get; }
+		public AnimatorControllerParameterType Type { get; }
+
+		public float FloatValue { get; }
+		public bool BoolValue { get; }
+		public int IntValue { get; }
+
+		public int Size => sizeof(int)
+		                   + sizeof(short)
+		                   + Type switch {
+			                   AnimatorControllerParameterType.Float => sizeof(float),
+			                   AnimatorControllerParameterType.Int => sizeof(int),
+			                   AnimatorControllerParameterType.Bool => sizeof(bool),
+			                   _ => throw new ArgumentOutOfRangeException(),
+		                   };
+
+		private AnimatorParameterPack(int nameHash, AnimatorControllerParameterType type) {
+			this.NameHash = nameHash;
+			this.Type = type;
+			this.FloatValue = 0f;
+			this.BoolValue = false;
+			this.IntValue = 0;
+		}
+
+		internal AnimatorParameterPack(int nameHash, AnimatorControllerParameterType type, float floatValue) : this(nameHash, type) {
+			this.FloatValue = floatValue;
+		}
+
+		internal AnimatorParameterPack(int nameHash, AnimatorControllerParameterType type, int intValue) : this(nameHash, type) {
+			this.IntValue = intValue;
+		}
+
+		internal AnimatorParameterPack(int nameHash, AnimatorControllerParameterType type, bool boolValue) : this(nameHash, type) {
+			this.BoolValue = boolValue;
+		}
+
+		public static void Serialize(NetDataWriter writer, AnimatorParameterPack pack) {
+			writer.Put(pack.NameHash);
+			writer.Put((short)pack.Type);
+
+			switch (pack.Type) {
+				case AnimatorControllerParameterType.Float:
+					writer.Put(pack.FloatValue);
+					break;
+				case AnimatorControllerParameterType.Int:
+					writer.Put(pack.IntValue);
+					break;
+				case AnimatorControllerParameterType.Bool:
+					writer.Put(pack.BoolValue);
+					break;
+				default:
+					throw new ArgumentOutOfRangeException();
+			}
+		}
+
+		public static AnimatorParameterPack Deserialize(NetDataReader reader) {
+			int nameHash = reader.GetInt();
+			AnimatorControllerParameterType type = (AnimatorControllerParameterType)reader.GetShort();
+
+			return type switch {
+				AnimatorControllerParameterType.Float => new AnimatorParameterPack(nameHash, type, reader.GetFloat()),
+				AnimatorControllerParameterType.Int => new AnimatorParameterPack(nameHash, type, reader.GetInt()),
+				AnimatorControllerParameterType.Bool => new AnimatorParameterPack(nameHash, type, reader.GetBool()),
+				_ => throw new ArgumentOutOfRangeException(),
+			};
+		}
+
 	}
 
 	internal struct InstantiatePack {

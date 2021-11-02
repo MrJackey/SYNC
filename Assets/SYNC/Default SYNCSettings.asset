@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 47edbe7121974c218f135d4348b115c0, type: 3}
   m_Name: Default SYNCSettings
   m_EditorClassIdentifier: 
-  tickRate: 60
   port: 5000
+  sendRate: 20
   nonPlayerPrefabs:
   - {fileID: 4886819803050414543, guid: c2f4bf592d5110d4fa67fa21c9f26bb4, type: 3}
   password: Debug_key

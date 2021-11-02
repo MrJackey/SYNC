@@ -7,11 +7,12 @@ namespace Sync.Components {
 	[AddComponentMenu("SYNC/SYNC Identity")]
 	[DisallowMultipleComponent]
 	public class SYNCIdentity : MonoBehaviour {
-		internal int NetID { get; private set; }
+		public int NetID { get; private set; }
 
 		internal event Action<int> NetIDAssigned;
 
-		internal SYNCTransform SYNCTransform { get; set; }
+		internal SYNCTransform SyncTransform { get; set; }
+		internal SYNCAnimator SyncAnimator { get; set; }
 		internal Dictionary<int, SYNCBehaviour> SYNCBehaviours { get; } = new Dictionary<int, SYNCBehaviour>();
 
 		internal void AssignNetID(int netID) {

@@ -126,6 +126,7 @@ namespace Sync.Components {
 			// Skip old packages arriving late
 			if (msg.tick >= _lastReceivedServerTick) {
 				SYNCTransformHandler.ApplyData(msg.SYNCTransforms);
+				SYNCAnimatorHandler.ApplyData(msg.SYNCAnimators);
 				_lastReceivedServerTick = msg.tick;
 			}
 		}

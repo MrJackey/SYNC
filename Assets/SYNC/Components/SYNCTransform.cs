@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace Sync.Components {
 	[AddComponentMenu("SYNC/SYNC Transform")]
+	[DisallowMultipleComponent]
 	[RequireComponent(typeof(Transform), typeof(SYNCIdentity))]
 	internal sealed class SYNCTransform : MonoBehaviour {
 		[SerializeField] private SYNCPositionPrecision _positionPrecision = SYNCPositionPrecision.Vector3Half;
@@ -11,11 +12,11 @@ namespace Sync.Components {
 		[SerializeField] private SYNCScalePrecision _scalePrecision = SYNCScalePrecision.Ignore;
 
 		internal SYNCIdentity SyncIdentity { get; private set; }
-		internal int NetID => SyncIdentity.NetID;
+		public int NetID => SyncIdentity.NetID;
 
 		private void Awake() {
 			SyncIdentity = GetComponent<SYNCIdentity>();
-			SyncIdentity.SYNCTransform = this;
+			SyncIdentity.SyncTransform = this;
 
 			SyncIdentity.NetIDAssigned += OnNetIDAssigned;
 		}
