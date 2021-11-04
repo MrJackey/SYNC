@@ -1,4 +1,5 @@
-﻿using Sync.Handlers;
+﻿using System;
+using Sync.Handlers;
 using Sync.Utils;
 using UnityEngine;
 
@@ -16,7 +17,9 @@ namespace Sync.Components {
 		[SerializeField] private SYNCScalePrecision _scalePrecision = SYNCScalePrecision.Ignore;
 
 		[Header("Interpolation")]
-		[SerializeField] private SYNCInterpolationOptions _positionInterpolation = SYNCInterpolationOptions.Linear;
+		[SerializeField] private SYNCPositionInterpolationOptions _positionInterpolation = SYNCPositionInterpolationOptions.Linear;
+		[SerializeField] private SYNCInterpolationOptions _rotationInterpolation = SYNCInterpolationOptions.Linear;
+		[SerializeField] private SYNCInterpolationOptions _scaleInterpolation = SYNCInterpolationOptions.Linear;
 
 		[Header("Extrapolation")]
 		[SerializeField] private bool _extrapolate;
@@ -99,16 +102,14 @@ namespace Sync.Components {
 		}
 
 		private void InterpolatePosition() {
-			Transform myTransform = transform;
-
 			switch (_positionInterpolation) {
-				case SYNCInterpolationOptions.Ignore:
-					myTransform.position = _positionInterpolationBuffer[TargetSnapshot];
+				case SYNCPositionInterpolationOptions.None:
+					transform.position = _positionInterpolationBuffer[TargetSnapshot];
 					break;
-				case SYNCInterpolationOptions.Linear when _positionInterpolationBuffer.Count >= 2:
-					myTransform.position = Vector3.Lerp(_positionInterpolationBuffer[PrevSnapshot], _positionInterpolationBuffer[TargetSnapshot], _tInterpolation);
+				case SYNCPositionInterpolationOptions.Linear when _positionInterpolationBuffer.Count >= 2:
+					transform.position = Vector3.Lerp(_positionInterpolationBuffer[PrevSnapshot], _positionInterpolationBuffer[TargetSnapshot], _tInterpolation);
 					break;
-				case SYNCInterpolationOptions.CubicHermiteSpline when _positionInterpolationBuffer.Count >= 4:
+				case SYNCPositionInterpolationOptions.CubicHermiteSpline when _positionInterpolationBuffer.Count >= 4:
 					Vector3 m0 = _positionInterpolationBuffer[PrevSnapshot] - _positionInterpolationBuffer[PrevSnapshot - 1];
 					Vector3 m1 = _positionInterpolationBuffer[TargetSnapshot + 1] - _positionInterpolationBuffer[TargetSnapshot];
 
@@ -117,22 +118,32 @@ namespace Sync.Components {
 					else if (m1 == Vector3.zero)
 						m0.Set(0, 0, 0);
 
-					myTransform.position = SYNCHelperInternal.EvaluateCubicHermiteSpline(
+					transform.position = SYNCHelperInternal.EvaluateCubicHermiteSpline(
 						_positionInterpolationBuffer[PrevSnapshot],
 						_positionInterpolationBuffer[TargetSnapshot],
 						m0,
 						m1,
 						_tInterpolation);
 					break;
+				default:
+					throw new ArgumentOutOfRangeException();
 			}
 		}
 
 		private void InterpolateRotation() {
-			transform.rotation = Quaternion.Slerp(_rotationInterpolationBuffer[PrevSnapshot], _rotationInterpolationBuffer[TargetSnapshot], _tInterpolation);
+			transform.rotation = _rotationInterpolation switch {
+				SYNCInterpolationOptions.None => _rotationInterpolationBuffer[TargetSnapshot],
+				SYNCInterpolationOptions.Linear => Quaternion.Slerp(_rotationInterpolationBuffer[PrevSnapshot], _rotationInterpolationBuffer[TargetSnapshot], _tInterpolation),
+				_ => throw new ArgumentOutOfRangeException(),
+			};
 		}
 
 		private void InterpolateScale() {
-			transform.localScale = Vector3.Lerp(_scaleInterpolationBuffer[PrevSnapshot], _scaleInterpolationBuffer[TargetSnapshot], _tInterpolation);
+			transform.localScale = _scaleInterpolation switch {
+				SYNCInterpolationOptions.None => _scaleInterpolationBuffer[TargetSnapshot],
+				SYNCInterpolationOptions.Linear => Vector3.Lerp(_scaleInterpolationBuffer[PrevSnapshot],_scaleInterpolationBuffer[TargetSnapshot], _tInterpolation),
+				_ => throw new ArgumentOutOfRangeException(),
+			};
 		}
 
 		private void ExtrapolatePosition() {

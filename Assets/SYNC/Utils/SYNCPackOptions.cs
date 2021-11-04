@@ -48,8 +48,13 @@ namespace Sync.Utils {
 	}
 
 	internal enum SYNCInterpolationOptions : ushort {
-		Ignore,
+		None,
 		Linear,
+	}
+
+	internal enum SYNCPositionInterpolationOptions : ushort {
+		None = SYNCInterpolationOptions.None,
+		Linear = SYNCInterpolationOptions.Linear,
 		CubicHermiteSpline,
 	}
 
