@@ -16,7 +16,13 @@ namespace Sync {
 
 		[Header("Debug")]
 		public string password = "Debug_key";
+		[Range(0, 100)] public int packetLossChance;
 
-		internal void Apply(NetManager instance) { }
+		internal void Apply(NetManager instance) {
+			if (packetLossChance != 0) {
+				instance.SimulatePacketLoss = true;
+				instance.SimulationPacketLossChance = packetLossChance;
+			}
+		}
 	}
 }

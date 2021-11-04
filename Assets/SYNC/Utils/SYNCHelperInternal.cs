@@ -68,5 +68,17 @@ namespace Sync.Utils {
 				_ => default,
 			};
 		}
+
+		// https://en.wikipedia.org/wiki/Cubic_Hermite_spline
+		internal static Vector3 EvaluateCubicHermiteSpline(Vector3 p0, Vector3 p1, Vector3 m0, Vector3 m1, float t) {
+			float square = t * t;
+			float cubic = square * t;
+
+			float cubic2 = cubic * 2;
+			float square3 = square * 3;
+
+			// return (2 * cubic - 3 * square + 1) * p0 + (cubic - 2 * square + t) * m0 + (-2 * cubic + 3 * square) * p1 + (cubic - square) * m1;
+			return (cubic2 - square3 + 1) * p0 + (cubic - 2 * square + t) * m0 + (-cubic2 + square3) * p1 + (cubic - square) * m1;
+		}
 	}
 }

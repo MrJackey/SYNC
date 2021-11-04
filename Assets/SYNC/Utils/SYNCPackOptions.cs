@@ -47,6 +47,12 @@ namespace Sync.Utils {
 		ScaleUniformFloat = SYNCScalePrecision.UniformFloat,
 	}
 
+	internal enum SYNCInterpolationOptions : ushort {
+		Ignore,
+		Linear,
+		CubicHermiteSpline,
+	}
+
 	internal enum SYNCInstantiateMode : ushort {
 		Standard = 4,
 		PositionOnly = 8,
