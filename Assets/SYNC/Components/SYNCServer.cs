@@ -117,6 +117,7 @@ namespace Sync.Components {
 		private void SendServerState() {
 			TransformPack[] syncTransforms = SYNCTransformHandler.GetData();
 			AnimatorPack[] syncAnimators = SYNCAnimatorHandler.GetData();
+			IdentityVarsPack[] identityVars = SYNCVarHandler.GetData();
 			const DeliveryMethod deliveryMethod = DeliveryMethod.Unreliable;
 
 			foreach (NetPeer peer in _server.ConnectedPeerList) {
@@ -127,11 +128,15 @@ namespace Sync.Components {
 
 				List<SYNCPacket<TransformPack>> transformPackets = SYNCHelperInternal.DividePacksIntoPackets(syncTransforms, maxPacketSize);
 				foreach (SYNCPacket<TransformPack> packet in transformPackets)
-					_packetProcessor.Send(peer, new SYNCServerStateMsg {tick = _serverTick, SYNCTransforms = packet.Content, SYNCAnimators = new AnimatorPack[0]}, deliveryMethod);
+					_packetProcessor.Send(peer, new SYNCServerStateMsg {tick = _serverTick, SYNCTransforms = packet.Content, SYNCAnimators = new AnimatorPack[0], SYNCVars = new IdentityVarsPack[0]}, deliveryMethod);
 
 				List<SYNCPacket<AnimatorPack>> animatorPackets = SYNCHelperInternal.DividePacksIntoPackets(syncAnimators, maxPacketSize);
 				foreach (SYNCPacket<AnimatorPack> packet in animatorPackets)
-					_packetProcessor.Send(peer, new SYNCServerStateMsg {tick = _serverTick, SYNCTransforms = new TransformPack[0], SYNCAnimators = packet.Content}, deliveryMethod);
+					_packetProcessor.Send(peer, new SYNCServerStateMsg {tick = _serverTick, SYNCTransforms = new TransformPack[0], SYNCAnimators = packet.Content, SYNCVars = new IdentityVarsPack[0]}, deliveryMethod);
+
+				List<SYNCPacket<IdentityVarsPack>> varPackets = SYNCHelperInternal.DividePacksIntoPackets(identityVars, maxPacketSize);
+				foreach (SYNCPacket<IdentityVarsPack> packet in varPackets)
+					_packetProcessor.Send(peer, new SYNCServerStateMsg {tick = _serverTick, SYNCTransforms = new TransformPack[0], SYNCAnimators = new AnimatorPack[0], SYNCVars = packet.Content}, deliveryMethod);
 			}
 		}
 

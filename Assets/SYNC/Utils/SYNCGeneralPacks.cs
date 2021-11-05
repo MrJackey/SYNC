@@ -1,14 +1,93 @@
 ﻿using System;
+using System.Linq;
+using System.Text;
 using LiteNetLib.Utils;
+using Sync.Utils;
 using UnityEngine;
 
-namespace Sync.Utils {
-	internal struct ObjectPack {
+namespace Sync.Packs {
+	internal struct IdentityVarsPack : IPack {
+		public int NetID { get; }
+		public BehaviourVarsPack[] Packs { get; }
+		public byte PacksCount => (byte)Packs.Length;
+
+		public int ByteSize => sizeof(int)
+		                       + sizeof(byte)
+		                       + Packs.Sum(pack => pack.ByteSize);
+
+		internal IdentityVarsPack(int netID, BehaviourVarsPack[] packs) {
+			this.NetID = netID;
+			this.Packs = packs;
+		}
+
+		public static void Serialize(NetDataWriter writer, IdentityVarsPack pack) {
+			writer.Put(pack.NetID);
+			writer.Put(pack.PacksCount);
+
+			foreach (BehaviourVarsPack behaviourVarsPack in pack.Packs)
+				BehaviourVarsPack.Serialize(writer, behaviourVarsPack);
+		}
+
+		public static IdentityVarsPack Deserialize(NetDataReader reader) {
+			int netID = reader.GetInt();
+			byte packsCount = reader.GetByte();
+
+			BehaviourVarsPack[] packs = new BehaviourVarsPack[packsCount];
+			for (int i = 0; i < packs.Length; i++)
+				packs[i] = BehaviourVarsPack.Deserialize(reader);
+
+			return new IdentityVarsPack(netID, packs);
+		}
+
+	}
+
+	internal struct BehaviourVarsPack : IPack {
+		public int BehaviourID { get; }
+		public (string fieldName, object fieldValue)[] Vars { get; }
+		public byte VarsCount => (byte)Vars.Length;
+
+		public int ByteSize => sizeof(int)
+		                       + sizeof(byte);
+
+		internal BehaviourVarsPack(int behaviourID, (string fieldName, object fieldValue)[] vars) {
+			this.BehaviourID = behaviourID;
+			this.Vars = vars;
+		}
+
+		public static void Serialize(NetDataWriter writer, BehaviourVarsPack pack) {
+			writer.Put(pack.BehaviourID);
+
+			writer.Put(pack.VarsCount);
+			foreach ((string name, object value) in pack.Vars) {
+				writer.Put(name);
+				ObjectPack.Serialize(writer, new ObjectPack(value));
+			}
+		}
+
+		public static BehaviourVarsPack Deserialize(NetDataReader reader) {
+			int behaviourID = reader.GetInt();
+			byte varsCount = reader.GetByte();
+
+			(string nameof, object value)[] vars = new (string nameof, object value)[varsCount];
+			for (int i = 0; i < vars.Length; i++)
+				vars[i] = (reader.GetString(), ObjectPack.Deserialize(reader).Data);
+
+			return new BehaviourVarsPack(
+				behaviourID,
+				vars
+			);
+		}
+	}
+
+	internal struct ObjectPack : IPack {
 		public object Data { get; }
 
 		internal ObjectPack(object data) {
 			this.Data = data;
 		}
+
+		public int ByteSize => sizeof(byte)
+		                       + GetObjectByteSize();
 
 		public static void Serialize(NetDataWriter writer, ObjectPack pack) {
 			switch (pack.Data) {
@@ -100,6 +179,27 @@ namespace Sync.Utils {
 			};
 
 			return new ObjectPack(data);
+		}
+
+		private int GetObjectByteSize() {
+			return Data switch {
+				char _ => sizeof(char),
+				string s => Encoding.UTF8.GetByteCount(s),
+				bool _ => sizeof(bool),
+				byte _ => sizeof(byte),
+				sbyte _ => sizeof(sbyte),
+				short _ => sizeof(short),
+				ushort _ => sizeof(ushort),
+				int _ => sizeof(int),
+				uint _ => sizeof(uint),
+				long _ => sizeof(long),
+				ulong _ => sizeof(ulong),
+				float _ => sizeof(float),
+				double _ => sizeof(double),
+				Vector3 _ => sizeof(float) * 3,
+				Vector2 _ => sizeof(float) * 2,
+				_ => throw new ArgumentOutOfRangeException(),
+			};
 		}
 
 		private static void WriteType(NetDataWriter writer, SYNCObjectType type) => writer.Put((byte)type);

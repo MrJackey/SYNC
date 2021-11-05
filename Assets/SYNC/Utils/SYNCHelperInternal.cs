@@ -12,6 +12,8 @@ namespace Sync.Utils {
 			packetProcessor.RegisterNestedType(AnimatorPack.Serialize, AnimatorPack.Deserialize);
 			packetProcessor.RegisterNestedType(AnimatorParameterPack.Serialize, AnimatorParameterPack.Deserialize);
 			packetProcessor.RegisterNestedType(InstantiatePack.Serialize, InstantiatePack.Deserialize);
+			packetProcessor.RegisterNestedType(IdentityVarsPack.Serialize, IdentityVarsPack.Deserialize);
+			packetProcessor.RegisterNestedType(BehaviourVarsPack.Serialize, BehaviourVarsPack.Deserialize);
 			packetProcessor.RegisterNestedType(Vector3Pack.Serialize, Vector3Pack.Deserialize);
 			packetProcessor.RegisterNestedType(Vector2Pack.Serialize, Vector2Pack.Deserialize);
 			packetProcessor.RegisterNestedType(ObjectPack.Serialize, ObjectPack.Deserialize);

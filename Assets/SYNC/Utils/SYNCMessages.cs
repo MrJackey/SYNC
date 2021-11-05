@@ -29,6 +29,7 @@ namespace Sync.Messages {
 		public uint tick;
 		public TransformPack[] SYNCTransforms { get; set; }
 		public AnimatorPack[] SYNCAnimators { get; set; }
+		public IdentityVarsPack[] SYNCVars { get; set; }
 	}
 
 	internal class SYNCRPCMsg {

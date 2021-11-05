@@ -1,17 +1,47 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using Sync.Attributes;
+using Sync.Handlers;
 using Sync.Messages;
+using Sync.Packs;
+using Sync.Utils.Extensions;
 using UnityEngine;
 
 namespace Sync.Components {
 	[RequireComponent(typeof(SYNCIdentity))]
 	public abstract class SYNCBehaviour : MonoBehaviour {
+		private const BindingFlags Field_Bindings = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+
+		private Dictionary<string, FieldInfo> _syncVars = new Dictionary<string, FieldInfo>();
+
 		private SYNCIdentity SyncIdentity { get; set; }
-		internal int NetID => SyncIdentity.NetID;
+		public int NetID => SyncIdentity.NetID;
 
 		protected virtual void Awake() {
 			SyncIdentity = GetComponent<SYNCIdentity>();
-			SyncIdentity.SYNCBehaviours.Add(GetInstanceID(), this);
+			SyncIdentity.SyncBehaviours.Add(GetInstanceID(), this);
+			SyncIdentity.NetIDAssigned += OnNetIDAssigned;
+
+			foreach (FieldInfo fieldInfo in GetType().GetFields(Field_Bindings))
+				foreach (CustomAttributeData customAttr in fieldInfo.CustomAttributes)
+					if (customAttr.AttributeType == typeof(SYNCVarAttribute)) {
+						_syncVars.Add(fieldInfo.Name, fieldInfo);
+						break;
+					}
+		}
+
+		private void OnNetIDAssigned(int netID) {
+			if (_syncVars.Count > 0)
+				SYNCVarHandler.Register(NetID);
+		}
+
+		protected void OnDestroy() {
+			if (_syncVars.Count > 0)
+				SYNCVarHandler.Unregister(NetID);
+
+			if (SyncIdentity != null)
+				SyncIdentity.NetIDAssigned -= OnNetIDAssigned;
 		}
 
 		/// <summary>
@@ -43,6 +73,23 @@ namespace Sync.Components {
 		public void InvokeClients(string methodName, params object[] args) {
 			if (SYNC.IsServer)
 				SYNCServer.Instance.SendRPC(NetID, GetInstanceID(), methodName, args);
+		}
+
+		internal BehaviourVarsPack GetVarData() {
+			(string, object)[] vars = new (string, object)[_syncVars.Count];
+
+			int i = 0;
+			foreach ((string fieldName, FieldInfo field) in _syncVars) {
+				vars[i] = (fieldName, field.GetValue(this));
+				i++;
+			}
+
+			return new BehaviourVarsPack(GetInstanceID(), vars);
+		}
+
+		public void ApplyVarData((string name, object value)[] behaviourVars) {
+			foreach ((string fieldName, object fieldValue) in behaviourVars)
+				_syncVars[fieldName].SetValue(this, fieldValue);
 		}
 
 		internal void ExecuteRPC(SYNCRPCMsg msg) {

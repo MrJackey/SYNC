@@ -30,6 +30,7 @@ namespace Sync.Components {
 		internal NetPeer Server => _client.FirstPeer;
 		internal int ReceiveRate => _settings.sendRate;
 		public bool IsConnected => _client.FirstPeer is {ConnectionState: ConnectionState.Connected};
+		public int ClientNetID => _clientNetID;
 
 		private void Awake() {
 			if (Instance == null) {
@@ -129,6 +130,7 @@ namespace Sync.Components {
 			if (msg.tick >= _lastReceivedServerTick) {
 				SYNCTransformHandler.ApplyData(msg.SYNCTransforms);
 				SYNCAnimatorHandler.ApplyData(msg.SYNCAnimators);
+				SYNCVarHandler.ApplyData(msg.SYNCVars);
 				_lastReceivedServerTick = msg.tick;
 			}
 		}
