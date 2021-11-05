@@ -42,14 +42,14 @@ namespace Sync.Packs {
 	}
 
 	internal struct BehaviourVarsPack : IPack {
-		public int BehaviourID { get; }
+		public byte BehaviourID { get; }
 		public (string fieldName, object fieldValue)[] Vars { get; }
 		public byte VarsCount => (byte)Vars.Length;
 
 		public int ByteSize => sizeof(int)
 		                       + sizeof(byte);
 
-		internal BehaviourVarsPack(int behaviourID, (string fieldName, object fieldValue)[] vars) {
+		internal BehaviourVarsPack(byte behaviourID, (string fieldName, object fieldValue)[] vars) {
 			this.BehaviourID = behaviourID;
 			this.Vars = vars;
 		}
@@ -65,7 +65,7 @@ namespace Sync.Packs {
 		}
 
 		public static BehaviourVarsPack Deserialize(NetDataReader reader) {
-			int behaviourID = reader.GetInt();
+			byte behaviourID = reader.GetByte();
 			byte varsCount = reader.GetByte();
 
 			(string nameof, object value)[] vars = new (string nameof, object value)[varsCount];

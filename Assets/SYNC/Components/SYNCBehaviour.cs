@@ -14,13 +14,13 @@ namespace Sync.Components {
 		private const BindingFlags Field_Bindings = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
 
 		private Dictionary<string, FieldInfo> _syncVars = new Dictionary<string, FieldInfo>();
+		private byte behaviourID;
 
 		private SYNCIdentity SyncIdentity { get; set; }
 		public int NetID => SyncIdentity.NetID;
 
 		protected virtual void Awake() {
 			SyncIdentity = GetComponent<SYNCIdentity>();
-			SyncIdentity.SyncBehaviours.Add(GetInstanceID(), this);
 			SyncIdentity.NetIDAssigned += OnNetIDAssigned;
 
 			foreach (FieldInfo fieldInfo in GetType().GetFields(Field_Bindings))
@@ -34,6 +34,10 @@ namespace Sync.Components {
 		private void OnNetIDAssigned(int netID) {
 			if (_syncVars.Count > 0)
 				SYNCVarHandler.Register(NetID);
+		}
+
+		internal void AssignBehaviourID(byte ID) {
+			behaviourID = ID;
 		}
 
 		protected void OnDestroy() {
@@ -51,7 +55,7 @@ namespace Sync.Components {
 		/// <param name="args"></param>
 		public void InvokeServer(string methodName, params object[] args) {
 			if (SYNC.IsClient)
-				SYNCClient.Instance.SendRPC(NetID, GetInstanceID(), methodName, args);
+				SYNCClient.Instance.SendRPC(NetID, behaviourID, methodName, args);
 		}
 
 		/// <summary>
@@ -62,7 +66,7 @@ namespace Sync.Components {
 		/// <param name="args"></param>
 		public void InvokeClients(int clientID, string methodName, params object[] args) {
 			if (SYNC.IsServer)
-				SYNCServer.Instance.SendRPC(clientID, NetID, GetInstanceID(), methodName, args);
+				SYNCServer.Instance.SendRPC(clientID, NetID, behaviourID, methodName, args);
 		}
 
 		/// <summary>
@@ -72,7 +76,7 @@ namespace Sync.Components {
 		/// <param name="args"></param>
 		public void InvokeClients(string methodName, params object[] args) {
 			if (SYNC.IsServer)
-				SYNCServer.Instance.SendRPC(NetID, GetInstanceID(), methodName, args);
+				SYNCServer.Instance.SendRPC(NetID, behaviourID, methodName, args);
 		}
 
 		internal BehaviourVarsPack GetVarData() {
@@ -84,7 +88,7 @@ namespace Sync.Components {
 				i++;
 			}
 
-			return new BehaviourVarsPack(GetInstanceID(), vars);
+			return new BehaviourVarsPack(behaviourID, vars);
 		}
 
 		public void ApplyVarData((string name, object value)[] behaviourVars) {

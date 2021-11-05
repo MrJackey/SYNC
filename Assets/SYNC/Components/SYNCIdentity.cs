@@ -9,13 +9,24 @@ namespace Sync.Components {
 	[AddComponentMenu("SYNC/SYNC Identity")]
 	[DisallowMultipleComponent]
 	public class SYNCIdentity : MonoBehaviour {
-		public int NetID { get; private set; }
+		private Dictionary<byte, SYNCBehaviour> syncBehaviours = new Dictionary<byte, SYNCBehaviour>();
+		private byte behaviourID;
 
 		internal event Action<int> NetIDAssigned;
 
 		internal SYNCTransform SyncTransform { get; set; }
 		internal SYNCAnimator SyncAnimator { get; set; }
-		internal Dictionary<int, SYNCBehaviour> SyncBehaviours { get; } = new Dictionary<int, SYNCBehaviour>();
+
+		public int NetID { get; private set; }
+
+		private void Awake() {
+			SYNCBehaviour[] behaviours = GetComponents<SYNCBehaviour>();
+
+			foreach (SYNCBehaviour syncBehaviour in behaviours) {
+				syncBehaviour.AssignBehaviourID(++behaviourID);
+				syncBehaviours.Add(behaviourID, syncBehaviour);
+			}
+		}
 
 		internal void AssignNetID(int netID) {
 			NetID = netID;
@@ -25,7 +36,7 @@ namespace Sync.Components {
 		internal IdentityVarsPack GetVarData() {
 			List<BehaviourVarsPack> packs = new List<BehaviourVarsPack>();
 
-			foreach ((int _, SYNCBehaviour syncBehaviour) in SyncBehaviours) {
+			foreach ((int _, SYNCBehaviour syncBehaviour) in syncBehaviours) {
 				BehaviourVarsPack fieldData = syncBehaviour.GetVarData();
 				if (fieldData.Vars.Length > 0)
 					packs.Add(fieldData);
@@ -36,11 +47,11 @@ namespace Sync.Components {
 
 		internal void ApplyVarData(IdentityVarsPack pack) {
 			foreach (BehaviourVarsPack behaviourVars in pack.Packs)
-				SyncBehaviours[behaviourVars.BehaviourID].ApplyVarData(behaviourVars.Vars);
+				syncBehaviours[behaviourVars.BehaviourID].ApplyVarData(behaviourVars.Vars);
 		}
 
 		internal void ExecuteRPC(SYNCRPCMsg msg) {
-			SyncBehaviours[msg.BehaviourID].ExecuteRPC(msg);
+			syncBehaviours[msg.BehaviourID].ExecuteRPC(msg);
 		}
 	}
 }

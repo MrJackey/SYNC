@@ -110,7 +110,7 @@ namespace Sync.Components {
 			onConnect?.Invoke();
 		}
 
-		internal void SendRPC(int netID, int behaviourID, string methodName, object[] args) {
+		internal void SendRPC(int netID, byte behaviourID, string methodName, object[] args) {
 			ObjectPack[] parameters = SYNCHelperInternal.PackifyObjects(args);
 			_packetProcessor.Send(Server, new SYNCRPCMsg() {NetID = netID, BehaviourID = behaviourID, MethodName = methodName, Parameters = parameters}, DeliveryMethod.ReliableOrdered);
 		}

@@ -195,12 +195,12 @@ namespace Sync.Components {
 			_packetProcessor.Send(_server, msg, DeliveryMethod.ReliableOrdered);
 		}
 
-		public void SendRPC(int clientID, int netID, int behaviourID, string methodName, object[] args) {
+		public void SendRPC(int clientID, int netID, byte behaviourID, string methodName, object[] args) {
 			ObjectPack[] parameters = SYNCHelperInternal.PackifyObjects(args);
 			_packetProcessor.Send(_server.GetPeerById(clientID), new SYNCRPCMsg() {NetID = netID, BehaviourID = behaviourID, MethodName = methodName, Parameters = parameters}, DeliveryMethod.ReliableOrdered);
 		}
 
-		public void SendRPC(int netID, int behaviourID, string methodName, object[] args) {
+		public void SendRPC(int netID, byte behaviourID, string methodName, object[] args) {
 			ObjectPack[] parameters = SYNCHelperInternal.PackifyObjects(args);
 			_packetProcessor.Send(_server, new SYNCRPCMsg() {NetID = netID, BehaviourID = behaviourID, MethodName = methodName, Parameters = parameters}, DeliveryMethod.ReliableOrdered);
 		}

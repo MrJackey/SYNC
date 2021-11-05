@@ -1,5 +1,4 @@
 ﻿using Sync.Packs;
-using Sync.Utils;
 
 namespace Sync.Messages {
 	internal class SYNCClientRegisterNetIDMsg {
@@ -34,7 +33,7 @@ namespace Sync.Messages {
 
 	internal class SYNCRPCMsg {
 		public int NetID { get; set; }
-		public int BehaviourID { get; set; }
+		public byte BehaviourID { get; set; }
 		public string MethodName { get; set; }
 		public ObjectPack[] Parameters { get; set; }
 	}
