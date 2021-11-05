@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Sync.Messages;
+using Sync.Packs;
 using UnityEngine;
 
 namespace Sync.Components {

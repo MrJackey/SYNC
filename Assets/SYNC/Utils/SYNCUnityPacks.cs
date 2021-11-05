@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Linq;
 using LiteNetLib.Utils;
+using Sync.Utils;
 using Sync.Utils.Extensions;
 using UnityEngine;
 
-namespace Sync.Utils {
+namespace Sync.Packs {
 	internal interface IPack {
 		public int ByteSize { get;  }
 	}

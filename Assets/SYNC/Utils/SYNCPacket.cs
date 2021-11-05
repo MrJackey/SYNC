@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Sync.Packs;
 
 namespace Sync.Utils {
 	internal class SYNCPacket<T> where T : IPack {

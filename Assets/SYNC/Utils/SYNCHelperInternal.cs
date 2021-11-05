@@ -2,6 +2,7 @@
 using System.Linq;
 using LiteNetLib.Utils;
 using Sync.Components;
+using Sync.Packs;
 using UnityEngine;
 
 namespace Sync.Utils {

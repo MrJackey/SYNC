@@ -1,4 +1,5 @@
-﻿using Sync.Utils;
+﻿using Sync.Packs;
+using Sync.Utils;
 
 namespace Sync.Messages {
 	internal class SYNCClientRegisterNetIDMsg {
