@@ -217,7 +217,7 @@ namespace Sync.Components {
 			if ((pack.options & SYNCTransformOptions.ScaleIgnore) == 0) {
 				if ((pack.options & (SYNCTransformOptions.ScaleUniformHalf | SYNCTransformOptions.ScaleUniformFloat)) != 0)
 					_scaleInterpolationBuffer.Push(new Vector3(pack.Scale.x, pack.Scale.x, pack.Scale.x));
-				else if ((pack.options & (SYNCTransformOptions.ScaleVector3Half | SYNCTransformOptions.ScaleVector3Half)) != 0)
+				else if ((pack.options & (SYNCTransformOptions.ScaleVector3Half | SYNCTransformOptions.ScaleVector3Float)) != 0)
 					_scaleInterpolationBuffer.Push(pack.Scale);
 				else if ((pack.options & (SYNCTransformOptions.ScaleVector2Half | SYNCTransformOptions.ScaleVector2Float)) != 0)
 					_scaleInterpolationBuffer.Push(new Vector3(pack.Scale.x, pack.Scale.y, myTransform.localScale.z));
