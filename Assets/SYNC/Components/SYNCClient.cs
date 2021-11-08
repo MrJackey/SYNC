@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using LiteNetLib;
@@ -24,6 +22,7 @@ namespace Sync.Components {
 		private Dictionary<int, SYNCIdentity> _registeredPrefabs = new Dictionary<int, SYNCIdentity>();
 
 		private uint _lastReceivedServerTick = 0;
+		private SYNCPlayerConnectedCallback _onConnect;
 
 		internal static SYNCClient Instance { get; private set; }
 		internal Dictionary<int, SYNCIdentity> SyncIdentities { get; } = new Dictionary<int, SYNCIdentity>();
@@ -97,18 +96,13 @@ namespace Sync.Components {
 			SYNC.IsClient = false;
 		}
 
-		internal void Connect(string address, int port, string password, SYNCSettings settings, Action onConnect) {
+		internal void Connect(string address, int port, string password, SYNCSettings settings, SYNCPlayerConnectedCallback onConnect) {
 			_settings = settings;
+			_onConnect = onConnect;
 
-			StartCoroutine(CoConnectToHost(address, port, password, onConnect));
-		}
-
-		private IEnumerator CoConnectToHost(string address, int port, string password, Action onConnect) {
 			InitializeNetwork(address, port, password);
-
-			yield return new WaitUntil(() => _client.IsRunning);
-			onConnect?.Invoke();
 		}
+
 
 		internal void SendRPC(int netID, byte behaviourID, string methodName, object[] args) {
 			ObjectPack[] parameters = SYNCHelperInternal.PackifyObjects(args);
@@ -119,11 +113,17 @@ namespace Sync.Components {
 		private void OnRegisterNetID(SYNCClientRegisterNetIDMsg msg, NetPeer _) {
 			Debug.Log($"[CLIENT] Connected with ClientNetID: {msg.ClientNetID}");
 			_clientNetID = msg.ClientNetID;
+
+			_onConnect?.Invoke(_clientNetID);
 		}
 
-		private void OnClientJoined(SYNCClientJoinedMsg msg, NetPeer _) { }
+		private void OnClientJoined(SYNCClientJoinedMsg msg, NetPeer _) {
+			SYNC.PlayerConnected(msg.ClientNetID);
+		}
 
-		private void OnClientDisconnect(SYNCClientDisconnectMsg msg, NetPeer _) { }
+		private void OnClientDisconnect(SYNCClientDisconnectMsg msg, NetPeer _) {
+			SYNC.PlayerDisconnected(msg.ClientNetID, msg.Reason);
+		}
 
 		private void OnNewServerState(SYNCServerStateMsg msg, NetPeer _) {
 			// Skip old packages arriving late

@@ -1,19 +1,31 @@
-﻿using System;
+﻿using LiteNetLib;
 using Sync.Components;
 using Sync.Utils;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace Sync {
+	public delegate void SYNCPlayerConnectedCallback(int clientNetID);
+	public delegate void SYNCPlayerDisconnectedCallback(int clientNetID, DisconnectReason reason);
+
 	public static class SYNC {
 		private static int netID;
+		internal static int GetNextNetID() => ++netID;
 
 		public static bool IsServer { get; internal set; }
 		public static bool IsClient { get; internal set; }
 
-		internal static int GetNextNetID() => ++netID;
+		/// <summary>
+		/// Invoked whenever a player (excluding myself) has connected to the server
+		/// </summary>
+		public static event SYNCPlayerConnectedCallback playerConnected;
 
-		public static void Host(string password, SYNCSettings settings, Action onConnect = default) {
+		/// <summary>
+		/// Invoked whenever a player (excluding myself) has disconnected from the server
+		/// </summary>
+		public static event SYNCPlayerDisconnectedCallback playerDisconnected;
+
+		public static void Host(string password, SYNCSettings settings, SYNCPlayerConnectedCallback onConnect = default) {
 			if (IsServer && SYNCServer.Instance.IsRunning) {
 				Debug.LogWarning("[SYNC] Unable to host server, a server is already hosted");
 				return;
@@ -23,7 +35,7 @@ namespace Sync {
 			server.Host(password, settings, onConnect);
 		}
 
-		public static void Connect(string address, int port, string password, SYNCSettings settings, Action onConnect = default) {
+		public static void Connect(string address, int port, string password, SYNCSettings settings, SYNCPlayerConnectedCallback onConnect = default) {
 			if (IsClient && SYNCClient.Instance.IsConnected) {
 				Debug.LogWarning("[SYNC] Unable to connect to address, client is already connected to a host");
 				return;
@@ -80,6 +92,12 @@ namespace Sync {
 				SYNCServer.Instance.SendObjectDestroy(syncIdentity);
 		}
 
+		internal static void PlayerConnected(int clientID) {
+			playerConnected?.Invoke(clientID);
+		}
+
+		internal static void PlayerDisconnected(int clientID, DisconnectReason reason) {
+			playerDisconnected?.Invoke(clientID, reason);
 		}
 	}
 }

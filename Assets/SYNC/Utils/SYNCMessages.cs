@@ -1,4 +1,5 @@
-﻿using Sync.Packs;
+﻿using LiteNetLib;
+using Sync.Packs;
 
 namespace Sync.Messages {
 	internal class SYNCClientRegisterNetIDMsg {
@@ -10,7 +11,8 @@ namespace Sync.Messages {
 	}
 
 	internal class SYNCClientDisconnectMsg {
-		public int NetID { get; set; }
+		public int ClientNetID { get; set; }
+		public DisconnectReason Reason { get; set; }
 	}
 
 	internal class SYNCObjectInstantiateMsg {

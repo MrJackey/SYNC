@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -95,7 +94,7 @@ namespace Sync.Components {
 			SYNC.IsServer = false;
 		}
 
-		internal void Host(string password, SYNCSettings settings, Action onConnect) {
+		internal void Host(string password, SYNCSettings settings, SYNCPlayerConnectedCallback onConnect) {
 			_settings = settings;
 			_password = password;
 
@@ -103,7 +102,7 @@ namespace Sync.Components {
 			StartCoroutine(CoConnectToSelf(password, settings, onConnect));
 		}
 
-		private IEnumerator CoConnectToSelf(string password, SYNCSettings settings, Action onConnect) {
+		private IEnumerator CoConnectToSelf(string password, SYNCSettings settings, SYNCPlayerConnectedCallback onConnect) {
 			yield return new WaitUntil(() => _server.IsRunning);
 
 			SYNC.Connect("127.0.0.1", _settings.port, password, settings, onConnect);
@@ -213,13 +212,25 @@ namespace Sync.Components {
 
 			foreach (NetPeer connectedPeer in _server.ConnectedPeerList) {
 				if (connectedPeer.Id == peer.Id) continue;
+				if (SYNC.IsClient && SYNCClient.Instance.ClientNetID == connectedPeer.Id) continue;
 
 				_packetProcessor.Send(connectedPeer, new SYNCClientJoinedMsg {ClientNetID = peer.Id}, DeliveryMethod.ReliableOrdered);
 			}
+
+			if (!SYNC.IsClient || SYNCClient.Instance.ClientNetID != peer.Id)
+				SYNC.PlayerConnected(peer.Id);
 		}
 
 		public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo) {
 			Debug.Log($"[SERVER] Peer disconnected {peer.EndPoint}, info: " + disconnectInfo.Reason);
+
+			foreach (NetPeer connectedPeer in _server.ConnectedPeerList) {
+				if (SYNC.IsClient && SYNCClient.Instance.ClientNetID == connectedPeer.Id) continue;
+
+				_packetProcessor.Send(connectedPeer, new SYNCClientDisconnectMsg {ClientNetID = peer.Id, Reason = disconnectInfo.Reason}, DeliveryMethod.ReliableOrdered);
+			}
+
+			SYNC.PlayerDisconnected(peer.Id, disconnectInfo.Reason);
 		}
 
 		public void OnNetworkError(IPEndPoint endPoint, SocketError socketError) {
