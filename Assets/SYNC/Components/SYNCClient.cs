@@ -27,7 +27,7 @@ namespace Sync.Components {
 		internal static SYNCClient Instance { get; private set; }
 		internal Dictionary<int, SYNCIdentity> SyncIdentities { get; } = new Dictionary<int, SYNCIdentity>();
 		internal NetPeer Server => _client.FirstPeer;
-		internal int ReceiveRate => _settings.sendRate;
+		internal int ReceiveRate => _settings.serverSendRate;
 		public bool IsConnected => _client.FirstPeer is {ConnectionState: ConnectionState.Connected};
 		public int ClientNetID => _clientNetID;
 

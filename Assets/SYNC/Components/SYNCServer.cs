@@ -49,7 +49,7 @@ namespace Sync.Components {
 
 			if (_startOnAwake)
 				if (_settings != null)
-					InitializeNetwork(_settings.port, _settings.sendRate);
+					InitializeNetwork(_settings.port, _settings.serverSendRate);
 				else
 					InitializeNetwork(5000, 60);
 		}
@@ -98,7 +98,7 @@ namespace Sync.Components {
 			_settings = settings;
 			_password = password;
 
-			InitializeNetwork(settings.port, settings.sendRate);
+			InitializeNetwork(settings.port, settings.serverSendRate);
 			StartCoroutine(CoConnectToSelf(password, settings, onConnect));
 		}
 
