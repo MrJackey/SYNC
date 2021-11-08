@@ -44,5 +44,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _settings: {fileID: 11400000, guid: b7b5a47b7675bd042ad60ca145e7e10b, type: 2}
+  _startOnAwake: 1
   _debugMode: 1
-  _prefab: {fileID: 4886819803050414543, guid: c2f4bf592d5110d4fa67fa21c9f26bb4, type: 3}

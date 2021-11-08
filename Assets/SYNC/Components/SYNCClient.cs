@@ -14,7 +14,7 @@ namespace Sync.Components {
 	[DefaultExecutionOrder(-1)]
 	internal sealed class SYNCClient : MonoBehaviour, INetEventListener {
 		[SerializeField] private SYNCSettings _settings;
-		[SerializeField] private bool _debugMode;
+		[SerializeField] private bool _connectOnAwake;
 
 		private NetManager _client;
 		private NetPacketProcessor _packetProcessor = new NetPacketProcessor();
@@ -48,11 +48,11 @@ namespace Sync.Components {
 				SyncIdentities.Add(syncIdentity.NetID, syncIdentity);
 			}
 
-			if (_debugMode)
+			if (_connectOnAwake)
 				if (_settings != null)
 					InitializeNetwork("127.0.0.1", _settings.port, _settings.password);
 				else
-					InitializeNetwork("127.0.0.1", 5000, "Debug_key");
+					Debug.LogError("[CLIENT] Client require a settings object when connecting on awake", gameObject);
 		}
 
 		private void InitializeNetwork(string address, int port, string password) {

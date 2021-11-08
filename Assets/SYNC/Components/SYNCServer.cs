@@ -51,19 +51,15 @@ namespace Sync.Components {
 				if (_settings != null)
 					InitializeNetwork(_settings.port, _settings.serverSendRate);
 				else
-					InitializeNetwork(5000, 60);
+					Debug.LogError("[SERVER] Server requires a settings object when starting on awake", gameObject);
 		}
 
 		private void InitializeNetwork(int port, int sendRate) {
-			if (_settings == null) {
-				Debug.LogError("[SERVER] Does not have access to a settings object", gameObject);
-				return;
-			}
-
 			_server = new NetManager(this);
 
 			RegisterPrefabs();
-			_settings.Apply(_server);
+			if (_settings != null)
+				_settings.Apply(_server);
 
 			_server.Start(port);
 
@@ -247,7 +243,7 @@ namespace Sync.Components {
 
 		public void OnConnectionRequest(ConnectionRequest request) {
 			if (_debugMode)
-				request.AcceptIfKey(_settings.password);
+				request.Accept();
 			else
 				request.AcceptIfKey(_password);
 		}
