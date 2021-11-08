@@ -71,10 +71,15 @@ namespace Sync {
 				SYNCServer.Instance.Instantiate(prefab, position, rotation, mode, accuracy);
 		}
 
-		public static void Destroy() {
-			if (IsServer) {
-				SYNCServer.Instance.SendObjectDestroy(GameObject.FindObjectOfType<SYNCIdentity>());
-			}
+		public static void Destroy(Object obj) {
+			Destroy(SYNCHelperInternal.GetSYNCIdentity(obj));
+		}
+
+		public static void Destroy(SYNCIdentity syncIdentity) {
+			if (IsServer)
+				SYNCServer.Instance.SendObjectDestroy(syncIdentity);
+		}
+
 		}
 	}
 }

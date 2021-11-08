@@ -68,7 +68,7 @@ namespace Sync.Utils {
 				SYNCIdentity syncComp => syncComp,
 				GameObject go when go.TryGetComponent(out SYNCIdentity objIdentity) => objIdentity,
 				Component comp when comp.TryGetComponent(out SYNCIdentity compIdentity) => compIdentity,
-				_ => default,
+				_ => throw new MissingComponentException("Object does not have a SYNCIdentity component"),
 			};
 		}
 
