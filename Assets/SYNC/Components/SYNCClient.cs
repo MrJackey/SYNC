@@ -15,7 +15,7 @@ namespace Sync.Components {
 	[DefaultExecutionOrder(-1)]
 	internal sealed class SYNCClient : MonoBehaviour, INetEventListener {
 		[SerializeField] private SYNCSettings _settings;
-		[SerializeField] private bool _connectOnAwake;
+		[SerializeField] private bool _connectOnStart;
 
 		private NetManager _client;
 		private NetPacketProcessor _packetProcessor = new NetPacketProcessor();
@@ -41,15 +41,12 @@ namespace Sync.Components {
 				Debug.LogWarning("[SYNC] Multiple clients detected, destroying last created", gameObject);
 				Destroy(this);
 			}
+		}
 
-			foreach (SYNCIdentity syncIdentity in SYNCHelperInternal.FindExistingIdentities()) {
-				if (!SYNC.IsServer)
-					syncIdentity.AssignNetID(SYNC.GetNextNetID());
+		private void Start() {
+			AssignNetIDs();
 
-				SyncIdentities.Add(syncIdentity.NetID, syncIdentity);
-			}
-
-			if (_connectOnAwake)
+			if (_connectOnStart)
 				if (_settings != null)
 					InitializeNetwork("127.0.0.1", _settings.port, _settings.password);
 				else
@@ -59,7 +56,9 @@ namespace Sync.Components {
 			DontDestroyOnLoad(gameObject);
 		}
 
-		private void OnSceneLoaded(Scene _, LoadSceneMode __) {
+		private void OnSceneLoaded(Scene _, LoadSceneMode __) => AssignNetIDs();
+
+		private void AssignNetIDs() {
 			foreach (SYNCIdentity syncIdentity in SYNCHelperInternal.FindExistingIdentities()) {
 				if (syncIdentity.NetID != default) continue;
 				if (!SYNC.IsServer)
@@ -70,15 +69,11 @@ namespace Sync.Components {
 		}
 
 		private void InitializeNetwork(string address, int port, string password) {
-			if (_settings == null) {
-				Debug.LogError("[SERVER] Does not have access to a settings object", gameObject);
-				return;
-			}
-
 			_client = new NetManager(this);
 
 			RegisterPrefabs();
-			_settings.Apply(_client);
+			if (_settings != null)
+				_settings.Apply(_client);
 
 			_client.Start();
 

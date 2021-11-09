@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   nonPlayerPrefabs:
   - {fileID: 4886819803050414543, guid: c2f4bf592d5110d4fa67fa21c9f26bb4, type: 3}
-  serverUpdateRate: 20
+  serverSendRate: 20
   port: 5000
   sendPeriod: 15
   pingInterval: 1000
@@ -22,8 +22,8 @@ MonoBehaviour:
   reconnectDelay: 500
   maxConnectAttempts: 10
   password: Debug_key
-  simulatePacketLoss: 1
-  packetLossChance: 10
+  simulatePacketLoss: 0
+  packetLossChance: 0
   simulateLatency: 0
   minLatency: 30
   maxLatency: 100

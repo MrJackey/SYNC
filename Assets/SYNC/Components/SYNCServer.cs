@@ -19,7 +19,7 @@ namespace Sync.Components {
 		internal static SYNCServer Instance { get; private set; }
 
 		[SerializeField] private SYNCSettings _settings;
-		[SerializeField] private bool _startOnAwake;
+		[SerializeField] private bool _hostOnStart;
 		[SerializeField] private bool _debugMode;
 
 		private NetManager _server;
@@ -42,13 +42,12 @@ namespace Sync.Components {
 				Debug.LogWarning("[SYNC] Multiple servers detected, destroying last created", gameObject);
 				Destroy(this);
 			}
+		}
 
-			foreach (SYNCIdentity syncIdentity in SYNCHelperInternal.FindExistingIdentities()) {
-				syncIdentity.AssignNetID(SYNC.GetNextNetID());
-				SyncIdentities.Add(syncIdentity.NetID, syncIdentity);
-			}
+		private void Start() {
+			AssignNetIDs();
 
-			if (_startOnAwake)
+			if (_hostOnStart)
 				if (_settings != null)
 					InitializeNetwork(_settings.port, _settings.serverSendRate);
 				else
@@ -58,7 +57,9 @@ namespace Sync.Components {
 			DontDestroyOnLoad(gameObject);
 		}
 
-		private void OnSceneLoaded(Scene _, LoadSceneMode __) {
+		private void OnSceneLoaded(Scene _, LoadSceneMode __) => AssignNetIDs();
+
+		private void AssignNetIDs() {
 			foreach (SYNCIdentity syncIdentity in SYNCHelperInternal.FindExistingIdentities()) {
 				if (syncIdentity.NetID != default) continue;
 
