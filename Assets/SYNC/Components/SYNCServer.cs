@@ -102,6 +102,7 @@ namespace Sync.Components {
 		private void OnDestroy() {
 			_server?.Stop();
 			SYNC.IsServer = false;
+			Instance = null;
 			SceneManager.sceneLoaded -= OnSceneLoaded;
 		}
 
@@ -117,6 +118,13 @@ namespace Sync.Components {
 			yield return new WaitUntil(() => _server.IsRunning);
 
 			SYNC.Connect("127.0.0.1", _settings.port, password, settings, onConnect);
+		}
+
+		internal void Shutdown() {
+			if (!IsRunning) return;
+
+			_server.Stop();
+			Destroy(this);
 		}
 
 		private void OnRPC(SYNCRPCMsg msg) {

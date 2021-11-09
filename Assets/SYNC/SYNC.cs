@@ -44,6 +44,13 @@ namespace Sync {
 			SYNCClient client = new GameObject("SYNC Client", typeof(SYNCClient)).GetComponent<SYNCClient>();
 
 			client.Connect(address, port, password, settings, onConnect);
+
+		public static void Disconnect() {
+			if (IsClient)
+				SYNCClient.Instance.Disconnect();
+
+			if (IsServer)
+				SYNCServer.Instance.Shutdown();
 		}
 
 		public static void Instantiate(Object prefab) {

@@ -103,6 +103,7 @@ namespace Sync.Components {
 		private void OnDestroy() {
 			_client?.Stop();
 			SYNC.IsClient = false;
+			Instance = null;
 			SceneManager.sceneLoaded -= OnSceneLoaded;
 		}
 
@@ -113,6 +114,12 @@ namespace Sync.Components {
 			InitializeNetwork(address, port, password);
 		}
 
+		internal void Disconnect() {
+			if (!IsConnected) return;
+
+			_client.Stop();
+			Destroy(this);
+		}
 
 		internal void SendRPC(int netID, byte behaviourID, string methodName, object[] args) {
 			ObjectPack[] parameters = SYNCHelperInternal.PackifyObjects(args);
