@@ -206,7 +206,7 @@ namespace Sync.Components {
 				if ((pack.options & (SYNCTransformOptions.PositionVector3Half | SYNCTransformOptions.PositionVector3Float)) != 0)
 					_positionInterpolationBuffer.Push(pack.Position);
 				else if ((pack.options & (SYNCTransformOptions.PositionVector2Half | SYNCTransformOptions.PositionVector2Float)) != 0)
-					_positionInterpolationBuffer.Push(new Vector3(pack.Position.x, pack.Position.x, myTransform.position.z));
+					_positionInterpolationBuffer.Push(new Vector3(pack.Position.x, pack.Position.y, myTransform.position.z));
 			}
 
 			if ((pack.options & SYNCTransformOptions.RotationIgnore) == 0) {
