@@ -28,6 +28,15 @@ namespace Sync.Components {
 			}
 		}
 
+		private void OnDestroy() {
+			if (NetID != default) {
+				if (SYNC.IsClient && SYNCClient.Instance != null)
+					SYNCClient.Instance.SyncIdentities.Remove(NetID);
+				if (SYNC.IsServer && SYNCServer.Instance != null)
+					SYNCServer.Instance.SyncIdentities.Remove(NetID);
+			}
+		}
+
 		internal void AssignNetID(int netID) {
 			NetID = netID;
 			NetIDAssigned?.Invoke(NetID);

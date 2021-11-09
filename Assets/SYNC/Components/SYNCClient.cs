@@ -8,6 +8,7 @@ using Sync.Messages;
 using Sync.Packs;
 using Sync.Utils;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Sync.Components {
 	[AddComponentMenu("SYNC/SYNC Client")]
@@ -53,6 +54,19 @@ namespace Sync.Components {
 					InitializeNetwork("127.0.0.1", _settings.port, _settings.password);
 				else
 					Debug.LogError("[CLIENT] Client require a settings object when connecting on awake", gameObject);
+
+			SceneManager.sceneLoaded += OnSceneLoaded;
+			DontDestroyOnLoad(gameObject);
+		}
+
+		private void OnSceneLoaded(Scene _, LoadSceneMode __) {
+			foreach (SYNCIdentity syncIdentity in SYNCHelperInternal.FindExistingIdentities()) {
+				if (syncIdentity.NetID != default) continue;
+				if (!SYNC.IsServer)
+					syncIdentity.AssignNetID(SYNC.GetNextNetID());
+
+				SyncIdentities.Add(syncIdentity.NetID, syncIdentity);
+			}
 		}
 
 		private void InitializeNetwork(string address, int port, string password) {
@@ -94,6 +108,7 @@ namespace Sync.Components {
 		private void OnDestroy() {
 			_client?.Stop();
 			SYNC.IsClient = false;
+			SceneManager.sceneLoaded -= OnSceneLoaded;
 		}
 
 		internal void Connect(string address, int port, string password, SYNCSettings settings, SYNCPlayerConnectedCallback onConnect) {

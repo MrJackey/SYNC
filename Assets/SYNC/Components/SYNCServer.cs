@@ -9,6 +9,7 @@ using Sync.Messages;
 using Sync.Packs;
 using Sync.Utils;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
 namespace Sync.Components {
@@ -52,6 +53,18 @@ namespace Sync.Components {
 					InitializeNetwork(_settings.port, _settings.serverSendRate);
 				else
 					Debug.LogError("[SERVER] Server requires a settings object when starting on awake", gameObject);
+
+			SceneManager.sceneLoaded += OnSceneLoaded;
+			DontDestroyOnLoad(gameObject);
+		}
+
+		private void OnSceneLoaded(Scene _, LoadSceneMode __) {
+			foreach (SYNCIdentity syncIdentity in SYNCHelperInternal.FindExistingIdentities()) {
+				if (syncIdentity.NetID != default) continue;
+
+				syncIdentity.AssignNetID(SYNC.GetNextNetID());
+				SyncIdentities.Add(syncIdentity.NetID, syncIdentity);
+			}
 		}
 
 		private void InitializeNetwork(int port, int sendRate) {
@@ -88,6 +101,7 @@ namespace Sync.Components {
 		private void OnDestroy() {
 			_server?.Stop();
 			SYNC.IsServer = false;
+			SceneManager.sceneLoaded -= OnSceneLoaded;
 		}
 
 		internal void Host(string password, SYNCSettings settings, SYNCPlayerConnectedCallback onConnect) {
