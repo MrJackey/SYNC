@@ -98,7 +98,7 @@ namespace Sync.Components {
 
 		internal void ExecuteRPC(SYNCRPCMsg msg) {
 			object[] parameters = msg.Parameters.Select(obj => obj.Data).ToArray();
-			GetType().InvokeMember(msg.MethodName, BindingFlags.InvokeMethod, null, this, parameters);
+			GetType().InvokeMember(msg.MethodName, Method_Bindings, null, this, parameters);
 		}
 	}
 }

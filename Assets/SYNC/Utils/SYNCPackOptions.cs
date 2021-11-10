@@ -79,21 +79,23 @@ namespace Sync.Utils {
 		ParentWorldSpace = SYNCInstantiateMode.ParentWorldSpace,
 	}
 
-	internal enum SYNCObjectType : byte {
-		String,
-		Bool,
-		Byte,
-		SByte,
-		Short,
-		UShort,
-		Int,
-		UInt,
-		Long,
-		ULong,
-		Float,
-		Double,
-		Char,
-		Vector3,
-		Vector2,
+	[Flags]
+	internal enum SYNCObjectType : ushort {
+		IsArray = 1,
+		String = 1 << 1,
+		Bool = 1 << 2,
+		Byte = 1 << 3,
+		SByte = 1 << 4,
+		Short = 1 << 5,
+		UShort = 1 << 6,
+		Int = 1 << 7,
+		UInt = 1 << 8,
+		Long = 1 << 9,
+		ULong = 1 << 10,
+		Float = 1 << 11,
+		Double = 1 << 12,
+		Char = 1 << 13,
+		Vector3 = 1 << 14,
+		Vector2 = 1 << 15,
 	}
 }

@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using LiteNetLib.Utils;
 using Sync.Utils;
@@ -86,103 +89,131 @@ namespace Sync.Packs {
 			this.Data = data;
 		}
 
-		public int ByteSize => sizeof(byte)
-		                       + GetObjectByteSize();
+		public int ByteSize {
+			get {
+				bool isArray = Data.GetType().IsArray;
+				int size = sizeof(ushort); // ObjectType
+
+				if (isArray) {
+					size += sizeof(ushort); // ArrayLength
+					size += ((object[])Data).Sum(GetObjectByteSize); // ArrayContent
+				}
+				else {
+					size += GetObjectByteSize(Data);
+				}
+
+				return size;
+			}
+		}
 
 		public static void Serialize(NetDataWriter writer, ObjectPack pack) {
-			switch (pack.Data) {
-				case char data:
-					WriteType(writer, SYNCObjectType.Char);
-					writer.Put(data);
-					break;
-				case string data:
-					WriteType(writer, SYNCObjectType.String);
-					writer.Put(data);
-					break;
-				case bool data:
-					WriteType(writer, SYNCObjectType.Bool);
-					writer.Put(data);
-					break;
-				case byte data:
-					WriteType(writer, SYNCObjectType.Byte);
-					writer.Put(data);
-					break;
-				case sbyte data:
-					WriteType(writer, SYNCObjectType.SByte);
-					writer.Put(data);
-					break;
-				case short data:
-					WriteType(writer, SYNCObjectType.Short);
-					writer.Put(data);
-					break;
-				case ushort data:
-					WriteType(writer, SYNCObjectType.UShort);
-					writer.Put(data);
-					break;
-				case int data:
-					WriteType(writer, SYNCObjectType.Int);
-					writer.Put(data);
-					break;
-				case uint data:
-					WriteType(writer, SYNCObjectType.UInt);
-					writer.Put(data);
-					break;
-				case long data:
-					WriteType(writer, SYNCObjectType.Long);
-					writer.Put(data);
-					break;
-				case ulong data:
-					WriteType(writer, SYNCObjectType.ULong);
-					writer.Put(data);
-					break;
-				case float data:
-					WriteType(writer, SYNCObjectType.Float);
-					writer.Put(data);
-					break;
-				case double data:
-					WriteType(writer, SYNCObjectType.Double);
-					writer.Put(data);
-					break;
-				case Vector3 data:
-					WriteType(writer, SYNCObjectType.Vector3);
-					Vector3Pack.Serialize(writer, data);
-					break;
-				case Vector2 data:
-					WriteType(writer, SYNCObjectType.Vector2);
-					Vector2Pack.Serialize(writer, data);
-					break;
-				default:
-					throw new NotSupportedException($"The provided type {pack.Data.GetType().Name} is not supported");
+			SYNCObjectType typeFlags = 0;
+
+			if (pack.Data.GetType().IsArray) {
+				typeFlags |= SYNCObjectType.IsArray;
+
+				Array packData = pack.Data as Array;
+
+				WriteType(writer, packData.GetValue(0), typeFlags);
+				writer.Put((ushort)packData.Length);
+				foreach (object obj in packData)
+					WriteValue(writer, obj);
+			}
+			else {
+				WriteType(writer, pack.Data, typeFlags);
+				WriteValue(writer, pack.Data);
 			}
 		}
 
 		public static ObjectPack Deserialize(NetDataReader reader) {
-			SYNCObjectType type = (SYNCObjectType)reader.GetByte();
+			SYNCObjectType type = (SYNCObjectType)reader.GetUShort();
 
-			object data = type switch {
-				SYNCObjectType.Char => reader.GetChar(),
-				SYNCObjectType.String => reader.GetString(),
-				SYNCObjectType.Bool => reader.GetBool(),
-				SYNCObjectType.Byte => reader.GetByte(),
-				SYNCObjectType.SByte => reader.GetSByte(),
-				SYNCObjectType.Short => reader.GetShort(),
-				SYNCObjectType.UShort => reader.GetUShort(),
-				SYNCObjectType.Int => reader.GetInt(),
-				SYNCObjectType.UInt => reader.GetUInt(),
-				SYNCObjectType.Long => reader.GetLong(),
-				SYNCObjectType.ULong => reader.GetULong(),
-				SYNCObjectType.Float => reader.GetFloat(),
-				SYNCObjectType.Double => reader.GetDouble(),
-				SYNCObjectType.Vector3 => (Vector3)Vector3Pack.Deserialize(reader),
-				SYNCObjectType.Vector2 => (Vector2)Vector2Pack.Deserialize(reader),
-				_ => throw new ArgumentOutOfRangeException(),
-			};
+			if ((type & SYNCObjectType.IsArray) != 0) {
+				ushort arrayLength = reader.GetUShort();
 
-			return new ObjectPack(data);
+				Array data = Array.CreateInstance(ObjectTypeToType(type), arrayLength);
+
+				for (int i = 0; i < data.Length; i++)
+					data.SetValue(ReadValue(reader, type), i);
+
+				return new ObjectPack(data);
+			}
+
+			return new ObjectPack(ReadValue(reader, type));
 		}
 
-		private int GetObjectByteSize() {
-			return Data switch {
+		private static Type ObjectTypeToType(SYNCObjectType type) {
+			if ((type & SYNCObjectType.Char) != 0)
+				return typeof(char);
+			if ((type & SYNCObjectType.String) != 0)
+				return typeof(string);
+			if ((type & SYNCObjectType.Bool) != 0)
+				return typeof(bool);
+			if ((type & SYNCObjectType.Byte) != 0)
+				return typeof(byte);
+			if ((type & SYNCObjectType.SByte) != 0)
+				return typeof(sbyte);
+			if ((type & SYNCObjectType.Short) != 0)
+				return typeof(short);
+			if ((type & SYNCObjectType.UShort) != 0)
+				return typeof(ushort);
+			if ((type & SYNCObjectType.Int) != 0)
+				return typeof(int);
+			if ((type & SYNCObjectType.UInt) != 0)
+				return typeof(uint);
+			if ((type & SYNCObjectType.Long) != 0)
+				return typeof(long);
+			if ((type & SYNCObjectType.ULong) != 0)
+				return typeof(ulong);
+			if ((type & SYNCObjectType.Float) != 0)
+				return typeof(float);
+			if ((type & SYNCObjectType.Double) != 0)
+				return typeof(double);
+			if ((type & SYNCObjectType.Vector3) != 0)
+				return typeof(Vector3);
+			if ((type & SYNCObjectType.Vector2) != 0)
+				return typeof(Vector2);
+
+			throw new ArgumentOutOfRangeException();
+		}
+
+		private static object ReadValue(NetDataReader reader, SYNCObjectType type) {
+			if ((type & SYNCObjectType.Char) != 0)
+				return reader.GetChar();
+			if ((type & SYNCObjectType.String) != 0)
+				return reader.GetString();
+			if ((type & SYNCObjectType.Bool) != 0)
+				return reader.GetBool();
+			if ((type & SYNCObjectType.Byte) != 0)
+				return reader.GetByte();
+			if ((type & SYNCObjectType.SByte) != 0)
+				return reader.GetSByte();
+			if ((type & SYNCObjectType.Short) != 0)
+				return reader.GetShort();
+			if ((type & SYNCObjectType.UShort) != 0)
+				return reader.GetUShort();
+			if ((type & SYNCObjectType.Int) != 0)
+				return reader.GetInt();
+			if ((type & SYNCObjectType.UInt) != 0)
+				return reader.GetUInt();
+			if ((type & SYNCObjectType.Long) != 0)
+				return reader.GetLong();
+			if ((type & SYNCObjectType.ULong) != 0)
+				return reader.GetULong();
+			if ((type & SYNCObjectType.Float) != 0)
+				return reader.GetFloat();
+			if ((type & SYNCObjectType.Double) != 0)
+				return reader.GetDouble();
+			if ((type & SYNCObjectType.Vector3) != 0)
+				return (Vector3)Vector3Pack.Deserialize(reader);
+			if ((type & SYNCObjectType.Vector2) != 0)
+				return (Vector2)Vector2Pack.Deserialize(reader);
+
+			throw new ArgumentOutOfRangeException();
+		}
+
+		private static int GetObjectByteSize(object obj) {
+			return obj switch {
 				char _ => sizeof(char),
 				string s => Encoding.UTF8.GetByteCount(s),
 				bool _ => sizeof(bool),
@@ -202,6 +233,110 @@ namespace Sync.Packs {
 			};
 		}
 
-		private static void WriteType(NetDataWriter writer, SYNCObjectType type) => writer.Put((byte)type);
+		private static void WriteType(NetDataWriter writer, object obj, SYNCObjectType typeFlags) {
+			switch (obj) {
+				case char _:
+					WriteType(writer, typeFlags | SYNCObjectType.Char);
+					break;
+				case string _:
+					WriteType(writer, typeFlags | SYNCObjectType.String);
+					break;
+				case bool _:
+					WriteType(writer, typeFlags | SYNCObjectType.Bool);
+					break;
+				case byte _:
+					WriteType(writer, typeFlags | SYNCObjectType.Byte);
+					break;
+				case sbyte _:
+					WriteType(writer, typeFlags | SYNCObjectType.SByte);
+					break;
+				case short _:
+					WriteType(writer, typeFlags | SYNCObjectType.Short);
+					break;
+				case ushort _:
+					WriteType(writer, typeFlags | SYNCObjectType.UShort);
+					break;
+				case int _:
+					WriteType(writer, typeFlags | SYNCObjectType.Int);
+					break;
+				case uint _:
+					WriteType(writer, typeFlags | SYNCObjectType.UInt);
+					break;
+				case long _:
+					WriteType(writer, typeFlags | SYNCObjectType.Long);
+					break;
+				case ulong _:
+					WriteType(writer, typeFlags | SYNCObjectType.ULong);
+					break;
+				case float _:
+					WriteType(writer, typeFlags | SYNCObjectType.Float);
+					break;
+				case double _:
+					WriteType(writer, typeFlags | SYNCObjectType.Double);
+					break;
+				case Vector3 _:
+					WriteType(writer, typeFlags & SYNCObjectType.Vector3);
+					break;
+				case Vector2 _:
+					WriteType(writer, typeFlags & SYNCObjectType.Vector2);
+					break;
+				default:
+					throw new NotSupportedException($"The provided type {obj.GetType().Name} is not supported");
+			}
+		}
+
+		private static void WriteType(NetDataWriter writer, SYNCObjectType type) => writer.Put((ushort)type);
+
+		private static void WriteValue(NetDataWriter writer, object obj) {
+			switch (obj) {
+				case char data:
+					writer.Put(data);
+					break;
+				case string data:
+					writer.Put(data);
+					break;
+				case bool data:
+					writer.Put(data);
+					break;
+				case byte data:
+					writer.Put(data);
+					break;
+				case sbyte data:
+					writer.Put(data);
+					break;
+				case short data:
+					writer.Put(data);
+					break;
+				case ushort data:
+					writer.Put(data);
+					break;
+				case int data:
+					writer.Put(data);
+					break;
+				case uint data:
+					writer.Put(data);
+					break;
+				case long data:
+					writer.Put(data);
+					break;
+				case ulong data:
+					writer.Put(data);
+					break;
+				case float data:
+					writer.Put(data);
+					break;
+				case double data:
+					writer.Put(data);
+					break;
+				case Vector3 data:
+					Vector3Pack.Serialize(writer, data);
+					break;
+				case Vector2 data:
+					Vector2Pack.Serialize(writer, data);
+					break;
+				default:
+					throw new NotSupportedException($"The provided type {obj.GetType().Name} is not supported");
+			}
+		}
 	}
 }
