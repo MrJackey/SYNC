@@ -42,11 +42,11 @@ namespace Sync.Components {
 				Debug.LogWarning("[SYNC] Multiple servers detected, destroying last created", gameObject);
 				Destroy(this);
 			}
+
+			AssignNetIDs();
 		}
 
 		private void Start() {
-			AssignNetIDs();
-
 			if (_hostOnStart)
 				if (_settings != null)
 					InitializeNetwork(_settings.port, _settings.serverSendRate);

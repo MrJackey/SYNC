@@ -1,4 +1,5 @@
-﻿using LiteNetLib;
+﻿using System;
+using LiteNetLib;
 using Sync.Components;
 using Sync.Utils;
 using UnityEngine;
@@ -16,6 +17,13 @@ namespace Sync {
 		public static bool IsClient { get; internal set; }
 
 		/// <summary>
+		/// Returns the netID assigned to this client or -1 if not connected or is server-only
+		/// </summary>
+		public static int ClientNetID => IsClient ? SYNCClient.Instance.ClientNetID : -1;
+
+		internal static event Action setupComplete;
+
+		/// <summary>
 		/// Invoked whenever a player (excluding myself) has connected to the server
 		/// </summary>
 		public static event SYNCPlayerConnectedCallback playerConnected;
@@ -26,24 +34,30 @@ namespace Sync {
 		public static event SYNCPlayerDisconnectedCallback playerDisconnected;
 
 		public static void Host(string password, SYNCSettings settings, SYNCPlayerConnectedCallback onConnect = default) {
-			if (IsServer && SYNCServer.Instance.IsRunning) {
-				Debug.LogWarning("[SYNC] Unable to host server, a server is already hosted");
-				return;
-			}
+			if (IsServer && SYNCServer.Instance.IsRunning)
+				throw new InvalidOperationException("[SYNC] Unable to host server, a server is already hosted");
 
-			SYNCServer server = new GameObject("SYNC Server", typeof(SYNCServer)).GetComponent<SYNCServer>();
+			if (IsClient && SYNCClient.Instance.IsConnected)
+				throw new InvalidOperationException("[SYNC] Unable to host server, you are already connected to another one");
+
+			SYNCServer server = SYNCServer.Instance != null
+				? SYNCServer.Instance
+				: new GameObject("SYNC Server", typeof(SYNCServer)).GetComponent<SYNCServer>();
+
 			server.Host(password, settings, onConnect);
 		}
 
 		public static void Connect(string address, int port, string password, SYNCSettings settings, SYNCPlayerConnectedCallback onConnect = default) {
-			if (IsClient && SYNCClient.Instance.IsConnected) {
-				Debug.LogWarning("[SYNC] Unable to connect to address, client is already connected to a host");
-				return;
-			}
+			if (IsClient && SYNCClient.Instance.IsConnected)
+				throw new InvalidOperationException("[SYNC] Unable to connect to address, client is already connected to a host");
 
-			SYNCClient client = new GameObject("SYNC Client", typeof(SYNCClient)).GetComponent<SYNCClient>();
+			SYNCClient client = SYNCClient.Instance != null
+				? SYNCClient.Instance
+				: new GameObject("SYNC Client", typeof(SYNCClient)).GetComponent<SYNCClient>();
 
 			client.Connect(address, port, password, settings, onConnect);
+			setupComplete?.Invoke();
+		}
 
 		public static void Disconnect() {
 			if (IsClient)

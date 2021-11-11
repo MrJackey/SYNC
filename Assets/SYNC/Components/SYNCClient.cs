@@ -19,7 +19,7 @@ namespace Sync.Components {
 
 		private NetManager _client;
 		private NetPacketProcessor _packetProcessor = new NetPacketProcessor();
-		private int _clientNetID;
+		private int _clientNetID = -1;
 		private Dictionary<int, SYNCIdentity> _registeredPrefabs = new Dictionary<int, SYNCIdentity>();
 
 		private uint _lastReceivedServerTick = 0;
@@ -29,7 +29,7 @@ namespace Sync.Components {
 		internal Dictionary<int, SYNCIdentity> SyncIdentities { get; } = new Dictionary<int, SYNCIdentity>();
 		internal NetPeer Server => _client.FirstPeer;
 		internal int ReceiveRate => _settings.serverSendRate;
-		public bool IsConnected => _client.FirstPeer is {ConnectionState: ConnectionState.Connected};
+		public bool IsConnected => _client is {FirstPeer: {ConnectionState: ConnectionState.Connected}};
 		public int ClientNetID => _clientNetID;
 
 		private void Awake() {
@@ -41,11 +41,11 @@ namespace Sync.Components {
 				Debug.LogWarning("[SYNC] Multiple clients detected, destroying last created", gameObject);
 				Destroy(this);
 			}
+
+			AssignNetIDs();
 		}
 
 		private void Start() {
-			AssignNetIDs();
-
 			if (_connectOnStart)
 				if (_settings != null)
 					InitializeNetwork("127.0.0.1", _settings.port, _settings.password);
@@ -60,11 +60,11 @@ namespace Sync.Components {
 
 		private void AssignNetIDs() {
 			foreach (SYNCIdentity syncIdentity in SYNCHelperInternal.FindExistingIdentities()) {
-				if (syncIdentity.NetID != default) continue;
-				if (!SYNC.IsServer)
+				if (!SYNC.IsServer && syncIdentity.NetID == default)
 					syncIdentity.AssignNetID(SYNC.GetNextNetID());
 
-				SyncIdentities.Add(syncIdentity.NetID, syncIdentity);
+				if (!SyncIdentities.ContainsKey(syncIdentity.NetID))
+					SyncIdentities.Add(syncIdentity.NetID, syncIdentity);
 			}
 		}
 
