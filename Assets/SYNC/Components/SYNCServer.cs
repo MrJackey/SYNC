@@ -267,8 +267,10 @@ namespace Sync.Components {
 		public void OnConnectionRequest(ConnectionRequest request) {
 			if (_debugMode)
 				request.Accept();
-			else
+			else if (_server.ConnectedPeersCount < _settings.maxAllowedClients || _settings.maxAllowedClients == -1)
 				request.AcceptIfKey(_password);
+			else
+				request.Reject();
 		}
 		#endregion
 	}

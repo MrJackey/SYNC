@@ -15,6 +15,9 @@ namespace Sync {
 		[Tooltip("Port used when setting up and connecting to a server")]
 		public int port;
 
+		[Tooltip("How many clients are allowed to be connected to the same server instance, -1 if infinite")]
+		public int maxAllowedClients = 4;
+
 		[Tooltip("Maximum delay until a package is sent (milliseconds)")]
 		public int sendPeriod = 15;
 
