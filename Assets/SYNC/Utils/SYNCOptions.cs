@@ -3,4 +3,10 @@
 		Server,
 		Client,
 	}
+
+	public enum SYNCBehaviourUpdateMode : byte {
+		AsIs,
+		ServerOnly,
+		AuthorityOnly,
+	}
 }

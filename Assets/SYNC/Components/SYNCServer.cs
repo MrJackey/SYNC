@@ -8,6 +8,7 @@ using Sync.Handlers;
 using Sync.Messages;
 using Sync.Packs;
 using Sync.Utils;
+using Sync.Utils.Extensions;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
@@ -53,10 +54,11 @@ namespace Sync.Components {
 					InitializeNetwork(_settings.port, _settings.sendRate);
 
 					if (!SYNC.IsClient)
-						SYNC.SetupComplete();
+						foreach ((int _, SYNCIdentity identity) in SyncIdentities)
+							identity.Setup();
 				}
 				else {
-					Debug.LogError("[SERVER] Server requires a settings object when starting on awake", gameObject);
+					throw new MissingReferenceException("[SERVER] Server requires a settings object when hosting on start");
 				}
 
 			SceneManager.sceneLoaded += OnSceneLoaded;
@@ -174,7 +176,7 @@ namespace Sync.Components {
 			if (SYNC.IsClient)
 				SYNCClient.Instance.SyncIdentities.Add(syncComponent.NetID, syncComponent);
 
-			syncComponent.ManualRegistration();
+			syncComponent.Setup();
 
 			foreach (NetPeer connectedPeer in _server.ConnectedPeerList) {
 				if (SYNC.IsClient && connectedPeer.Id == SYNC.ClientNetID) continue;
@@ -219,9 +221,6 @@ namespace Sync.Components {
 				syncComponent.AssignAuthorityID(SYNC.ClientNetID);
 				instantiateOptions |= SYNCInstantiateOptions.ClientAuth;
 			}
-			else {
-				syncComponent.Authority = SYNCAuthority.Server;
-			}
 
 			InstantiatePack pack = new InstantiatePack(
 				position,
@@ -262,7 +261,7 @@ namespace Sync.Components {
 		private void SendObjectInstantiate(InstantiatePack pack, SYNCIdentity syncComponent, int prefabID) {
 			syncComponent.AssignNetID(SYNC.IncrementNetID());
 			SyncIdentities.Add(syncComponent.NetID, syncComponent);
-			syncComponent.ManualRegistration();
+			syncComponent.Setup();
 
 			if (SYNC.IsClient)
 				SYNCClient.Instance.SyncIdentities.Add(syncComponent.NetID, syncComponent);

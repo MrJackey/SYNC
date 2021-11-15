@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Sync.Messages;
 using Sync.Packs;
 using Sync.Utils;
@@ -13,19 +12,14 @@ namespace Sync.Components {
 		[SerializeField] private SYNCAuthority _authority = SYNCAuthority.Server;
 
 		private readonly Dictionary<byte, SYNCBehaviour> _syncBehaviours = new Dictionary<byte, SYNCBehaviour>();
-		private int _authorityID = 1;
+		private int _authorityID = -1;
 		private byte _behaviourID;
-
-		internal event Action<int> NetIDAssigned;
 
 		internal SYNCTransform SyncTransform { get; set; }
 		internal SYNCAnimator SyncAnimator { get; set; }
 
 		public int NetID { get; private set; }
-		public SYNCAuthority Authority {
-			get => _authority;
-			internal set => _authority = value;
-		}
+		public SYNCAuthority Authority => _authority;
 
 		public int AuthorityID => _authorityID;
 
@@ -47,14 +41,24 @@ namespace Sync.Components {
 			}
 		}
 
-		internal void ManualRegistration() {
+		internal void Setup() {
+			if (_authority == SYNCAuthority.Client && !SYNC.IsClient)
+				_authority = SYNCAuthority.Server;
+
 			if (SyncTransform != null)
 				SyncTransform.RegisterAtHandler();
+
+			if (SyncAnimator != null)
+				SyncAnimator.RegisterAtHandler();
+
+			foreach ((byte _, SYNCBehaviour behaviour) in _syncBehaviours) {
+				behaviour.RegisterAtHandler();
+				behaviour.UpdateEnableStatus();
+			}
 		}
 
 		internal void AssignNetID(int netID) {
 			NetID = netID;
-			NetIDAssigned?.Invoke(NetID);
 		}
 
 		internal void AssignAuthorityID(int authorityID) {

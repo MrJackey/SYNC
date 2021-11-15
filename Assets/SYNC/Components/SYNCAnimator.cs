@@ -29,7 +29,6 @@ namespace Sync.Components {
 
 			SyncIdentity = GetComponent<SYNCIdentity>();
 			SyncIdentity.SyncAnimator = this;
-			SyncIdentity.NetIDAssigned += OnNetIDAssigned;
 		}
 
 		private void CacheParameterHashes() {
@@ -37,16 +36,13 @@ namespace Sync.Components {
 				_parameterHashes.Add(parameter.name, parameter.nameHash);
 		}
 
-		private void OnNetIDAssigned(int netID) {
-			SYNCAnimatorHandler.Register(netID);
+		internal void RegisterAtHandler() {
+			SYNCAnimatorHandler.Register(SyncIdentity);
 		}
 
 		private void OnDestroy() {
 			if (NetID != 0)
-				SYNCAnimatorHandler.Unregister(NetID);
-
-			if (SyncIdentity != null)
-				SyncIdentity.NetIDAssigned -= OnNetIDAssigned;
+				SYNCAnimatorHandler.Unregister(SyncIdentity);
 		}
 
 		internal AnimatorPack GetData() {

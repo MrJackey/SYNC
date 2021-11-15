@@ -5,6 +5,7 @@ using Sync.Attributes;
 using Sync.Handlers;
 using Sync.Messages;
 using Sync.Packs;
+using Sync.Utils;
 using Sync.Utils.Extensions;
 using UnityEngine;
 
@@ -12,6 +13,11 @@ namespace Sync.Components {
 	[RequireComponent(typeof(SYNCIdentity))]
 	public abstract class SYNCBehaviour : MonoBehaviour {
 		private const BindingFlags Field_Bindings = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+		private const BindingFlags Method_Bindings = BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+
+		[Header("SYNC Behaviour")]
+		[SerializeField, Tooltip("Control component updates")]
+		private SYNCBehaviourUpdateMode _updateMode = SYNCBehaviourUpdateMode.ServerOnly;
 
 		private Dictionary<string, FieldInfo> _syncVars = new Dictionary<string, FieldInfo>();
 		private byte behaviourID;
@@ -21,7 +27,6 @@ namespace Sync.Components {
 
 		protected virtual void Awake() {
 			SyncIdentity = GetComponent<SYNCIdentity>();
-			SyncIdentity.NetIDAssigned += OnNetIDAssigned;
 
 			foreach (FieldInfo fieldInfo in GetType().GetFields(Field_Bindings))
 				foreach (CustomAttributeData customAttr in fieldInfo.CustomAttributes)
@@ -31,21 +36,31 @@ namespace Sync.Components {
 					}
 		}
 
-		private void OnNetIDAssigned(int netID) {
+		internal void UpdateEnableStatus() {
+			switch (_updateMode) {
+				case SYNCBehaviourUpdateMode.AsIs:
+					return;
+				case SYNCBehaviourUpdateMode.ServerOnly when !SYNC.IsServer:
+					enabled = false;
+					break;
+				case SYNCBehaviourUpdateMode.AuthorityOnly:
+					enabled = SYNCHelperInternal.IsAuthorityMine(SyncIdentity);
+					break;
+			}
+		}
+
+		internal void RegisterAtHandler() {
 			if (_syncVars.Count > 0)
-				SYNCVarHandler.Register(NetID);
+				SYNCVarHandler.Register(SyncIdentity);
 		}
 
 		internal void AssignBehaviourID(byte ID) {
 			behaviourID = ID;
 		}
 
-		protected void OnDestroy() {
+		protected virtual void OnDestroy() {
 			if (_syncVars.Count > 0)
-				SYNCVarHandler.Unregister(NetID);
-
-			if (SyncIdentity != null)
-				SyncIdentity.NetIDAssigned -= OnNetIDAssigned;
+				SYNCVarHandler.Unregister(SyncIdentity);
 		}
 
 		/// <summary>
@@ -64,7 +79,7 @@ namespace Sync.Components {
 		/// <param name="clientID"></param>
 		/// <param name="methodName"></param>
 		/// <param name="args"></param>
-		public void InvokeClients(int clientID, string methodName, params object[] args) {
+		public void InvokeClient(int clientID, string methodName, params object[] args) {
 			if (SYNC.IsServer)
 				SYNCServer.Instance.SendRPC(clientID, NetID, behaviourID, methodName, args);
 		}

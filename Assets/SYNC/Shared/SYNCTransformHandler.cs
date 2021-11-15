@@ -34,12 +34,13 @@ namespace Sync.Handlers {
 		}
 
 		internal static void ApplyData(TransformPack[] msg) {
-			foreach (TransformPack pack in msg)
+			foreach (TransformPack pack in msg) {
 				// TryGetValue is used due to ServerState messages can be received before other such as instantiating
 				if (SYNC.IsServer && SYNCServer.Instance.SyncIdentities.TryGetValue(pack.netID, out SYNCIdentity serverIdentity))
 					serverIdentity.SyncTransform.ApplyData(pack);
 				else if (SYNC.IsClient && SYNCClient.Instance.SyncIdentities.TryGetValue(pack.netID, out SYNCIdentity clientIdentity))
 					clientIdentity.SyncTransform.ApplyData(pack);
+			}
 		}
 	}
 }

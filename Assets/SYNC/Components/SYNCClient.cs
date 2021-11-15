@@ -7,6 +7,7 @@ using Sync.Handlers;
 using Sync.Messages;
 using Sync.Packs;
 using Sync.Utils;
+using Sync.Utils.Extensions;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -137,8 +138,8 @@ namespace Sync.Components {
 
 		internal void SendServerState() {
 			TransformPack[] syncTransforms = SYNCTransformHandler.GetData();
-			AnimatorPack[] syncAnimators = new AnimatorPack[0];
-			IdentityVarsPack[] identityVars = new IdentityVarsPack[0];
+			AnimatorPack[] syncAnimators = SYNCAnimatorHandler.GetData();
+			IdentityVarsPack[] identityVars = SYNCVarHandler.GetData();
 
 			SYNCHelperInternal.SendServerState(
 				_packetProcessor,
@@ -203,7 +204,9 @@ namespace Sync.Components {
 			_clientNetID = msg.ClientNetID;
 
 			_onConnect?.Invoke(_clientNetID);
-			SYNC.SetupComplete();
+
+			foreach ((int _, SYNCIdentity identity) in SyncIdentities)
+				identity.Setup();
 		}
 
 		private void OnClientJoined(SYNCClientJoinedMsg msg, NetPeer _) {
@@ -238,14 +241,11 @@ namespace Sync.Components {
 				else
 					syncComponent = Instantiate(prefab, msg.Info.Position, msg.Info.Rotation);
 
-				if (syncComponent.Authority == SYNCAuthority.Client && (msg.Info.options & SYNCInstantiateOptions.ClientAuth) == 0)
-					syncComponent.Authority = SYNCAuthority.Server;
-
 				syncComponent.AssignNetID(msg.NetID);
 				syncComponent.AssignAuthorityID(msg.Info.ClientAuthorityID);
 				SyncIdentities.Add(msg.NetID, syncComponent);
 
-				syncComponent.ManualRegistration();
+				syncComponent.Setup();
 			}
 		}
 
