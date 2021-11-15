@@ -221,23 +221,29 @@ namespace Sync.Packs {
 		public Vector3 Position { get; }
 		public Quaternion Rotation { get; }
 		public int Parent { get; }
+		public int ClientAuthorityID { get; }
 
-		internal InstantiatePack(Vector3 position, Quaternion rotation, SYNCInstantiateOptions options) {
+		internal InstantiatePack(Vector3 position, Quaternion rotation, SYNCInstantiateOptions options, int clientAuthorityID) {
 			this.Position = position;
 			this.Rotation = rotation;
 			this.Parent = -1;
 			this.options = options;
+			this.ClientAuthorityID = clientAuthorityID;
 		}
 
-		internal InstantiatePack(int parentNetID, SYNCInstantiateOptions options) {
+		internal InstantiatePack(int parentNetID, SYNCInstantiateOptions options, int clientAuthorityID) {
 			this.Position = Vector3.zero;
 			this.Rotation = Quaternion.identity;
 			this.Parent = parentNetID;
 			this.options = options;
+			this.ClientAuthorityID = clientAuthorityID;
 		}
 
 		public static void Serialize(NetDataWriter writer, InstantiatePack pack) {
 			writer.Put((ushort)pack.options);
+
+			if ((pack.options & SYNCInstantiateOptions.ClientAuth) != 0)
+				writer.Put(pack.ClientAuthorityID);
 
 			if ((pack.options & SYNCInstantiateOptions.Standard) != 0)
 				return;
@@ -262,9 +268,13 @@ namespace Sync.Packs {
 		public static InstantiatePack Deserialize(NetDataReader reader) {
 			SYNCInstantiateOptions options = (SYNCInstantiateOptions)reader.GetUShort();
 
+			int clientAuthorityID = (options & SYNCInstantiateOptions.ClientAuth) != 0
+				? reader.GetInt()
+				: -1;
+
 			if ((options & SYNCInstantiateOptions.Parent) != 0 || (options & SYNCInstantiateOptions.ParentWorldSpace) != 0) {
 				int parentNetID = reader.GetInt();
-				return new InstantiatePack(parentNetID, options);
+				return new InstantiatePack(parentNetID, options, clientAuthorityID);
 			}
 
 			Vector3 position = Vector3.zero;
@@ -281,7 +291,7 @@ namespace Sync.Packs {
 				rotation = QuaternionPack.Deserialize(reader);
 			}
 
-			return new InstantiatePack(position, rotation, options);
+			return new InstantiatePack(position, rotation, options, clientAuthorityID);
 		}
 	}
 

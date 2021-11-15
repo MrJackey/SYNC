@@ -11,7 +11,7 @@ namespace Sync {
 
 	public static class SYNC {
 		private static int netID;
-		internal static int GetNextNetID() => ++netID;
+		internal static int IncrementNetID() => ++netID;
 
 		public static bool IsServer { get; internal set; }
 		public static bool IsClient { get; internal set; }
@@ -56,7 +56,6 @@ namespace Sync {
 				: new GameObject("SYNC Client", typeof(SYNCClient)).GetComponent<SYNCClient>();
 
 			client.Connect(address, port, password, settings, onConnect);
-			setupComplete?.Invoke();
 		}
 
 		public static void Disconnect() {
@@ -97,11 +96,15 @@ namespace Sync {
 		public static void Instantiate(Object prefab, int parentNetID, bool instantiateInWorldSpace = false) {
 			if (IsServer)
 				SYNCServer.Instance.Instantiate(prefab, parentNetID, instantiateInWorldSpace);
+			else if (IsClient)
+				SYNCClient.Instance.Instantiate(prefab, parentNetID, instantiateInWorldSpace);
 		}
 
 		private static void Instantiate_Internal(Object prefab, Vector3 position, Quaternion rotation, SYNCInstantiateMode mode, SYNCFloatAccuracy accuracy) {
 			if (IsServer)
 				SYNCServer.Instance.Instantiate(prefab, position, rotation, mode, accuracy);
+			else if (IsClient)
+				SYNCClient.Instance.Instantiate(prefab, position, rotation, mode, accuracy);
 		}
 
 		public static void Destroy(Object obj) {
@@ -111,6 +114,10 @@ namespace Sync {
 		public static void Destroy(SYNCIdentity syncIdentity) {
 			if (IsServer)
 				SYNCServer.Instance.SendObjectDestroy(syncIdentity);
+		}
+
+		internal static void SetupComplete() {
+			setupComplete?.Invoke();
 		}
 
 		internal static void PlayerConnected(int clientID) {

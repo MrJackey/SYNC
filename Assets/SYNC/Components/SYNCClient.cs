@@ -19,6 +19,7 @@ namespace Sync.Components {
 
 		private NetManager _client;
 		private NetPacketProcessor _packetProcessor = new NetPacketProcessor();
+		private SYNCTickTimer _tickTimer;
 		private int _clientNetID = -1;
 		private Dictionary<int, SYNCIdentity> _registeredPrefabs = new Dictionary<int, SYNCIdentity>();
 
@@ -28,7 +29,7 @@ namespace Sync.Components {
 		internal static SYNCClient Instance { get; private set; }
 		internal Dictionary<int, SYNCIdentity> SyncIdentities { get; } = new Dictionary<int, SYNCIdentity>();
 		internal NetPeer Server => _client.FirstPeer;
-		internal int ReceiveRate => _settings.serverSendRate;
+		internal int ReceiveRate => _settings.sendRate;
 		public bool IsConnected => _client is {FirstPeer: {ConnectionState: ConnectionState.Connected}};
 		public int ClientNetID => _clientNetID;
 
@@ -48,7 +49,7 @@ namespace Sync.Components {
 		private void Start() {
 			if (_connectOnStart)
 				if (_settings != null)
-					InitializeNetwork("127.0.0.1", _settings.port, _settings.password);
+					InitializeNetwork("127.0.0.1", _settings.port, _settings.serverKey);
 				else
 					Debug.LogError("[CLIENT] Client require a settings object when connecting on awake", gameObject);
 
@@ -61,7 +62,7 @@ namespace Sync.Components {
 		private void AssignNetIDs() {
 			foreach (SYNCIdentity syncIdentity in SYNCHelperInternal.FindExistingIdentities()) {
 				if (!SYNC.IsServer && syncIdentity.NetID == default)
-					syncIdentity.AssignNetID(SYNC.GetNextNetID());
+					syncIdentity.AssignNetID(SYNC.IncrementNetID());
 
 				if (!SyncIdentities.ContainsKey(syncIdentity.NetID))
 					SyncIdentities.Add(syncIdentity.NetID, syncIdentity);
@@ -78,6 +79,8 @@ namespace Sync.Components {
 			_client.Start();
 
 			_client.Connect(address, port, password);
+
+			_tickTimer = new SYNCTickTimer(_settings.sendRate);
 
 			SYNCHelperInternal.RegisterNestedTypes(_packetProcessor);
 
@@ -96,8 +99,14 @@ namespace Sync.Components {
 		}
 
 		private void Update() {
-			if (IsConnected)
+			if (IsConnected) {
 				_client.PollEvents();
+
+				if (!SYNC.IsServer && _tickTimer.Elapsed) {
+					SendServerState();
+					_tickTimer.Restart();
+				}
+			}
 		}
 
 		private void OnDestroy() {
@@ -126,12 +135,75 @@ namespace Sync.Components {
 			_packetProcessor.Send(Server, new SYNCRPCMsg() {NetID = netID, BehaviourID = behaviourID, MethodName = methodName, Parameters = parameters}, DeliveryMethod.ReliableOrdered);
 		}
 
+		internal void SendServerState() {
+			TransformPack[] syncTransforms = SYNCTransformHandler.GetData();
+			AnimatorPack[] syncAnimators = new AnimatorPack[0];
+			IdentityVarsPack[] identityVars = new IdentityVarsPack[0];
+
+			SYNCHelperInternal.SendServerState(
+				_packetProcessor,
+				Server,
+				_lastReceivedServerTick,
+				syncTransforms,
+				syncAnimators,
+				identityVars
+			);
+		}
+
+		internal void Instantiate(Object obj, Vector3 position, Quaternion rotation, SYNCInstantiateMode mode, SYNCFloatAccuracy accuracy) {
+			(int prefabID, SYNCIdentity prefab) = SYNCHelperInternal.GetMatchingSyncPrefab(obj, _registeredPrefabs);
+
+			if (prefab == null)
+				throw new MissingComponentException($"[CLIENT] Trying to instantiate an object which does not have an SYNCIdentity: {obj.name}");
+
+			if (prefab.Authority != SYNCAuthority.Client) {
+				Debug.LogError($"[CLIENT] A client is not allowed to instantiate an object with server authority, {obj.name}");
+				return;
+			}
+
+			InstantiatePack pack = new InstantiatePack(
+				position,
+				rotation,
+				(SYNCInstantiateOptions)((ushort)mode | (ushort)accuracy) | SYNCInstantiateOptions.ClientAuth,
+				ClientNetID
+			);
+
+			SendObjectInstantiate(pack, prefabID);
+		}
+
+		internal void Instantiate(Object obj, int parentNetID, bool instantiateInWorldSpace) {
+			(int prefabID, SYNCIdentity prefab) = SYNCHelperInternal.GetMatchingSyncPrefab(obj, _registeredPrefabs);
+
+			if (prefab == null)
+				throw new MissingComponentException($"[CLIENT] Trying to instantiate an object which does not have an SYNCIdentity: {obj.name}");
+
+			if (prefab.Authority != SYNCAuthority.Client) {
+				Debug.LogError($"[CLIENT] A client is not allowed to instantiate an object with server authority, {obj.name}");
+				return;
+			}
+
+			InstantiatePack pack = new InstantiatePack(
+				parentNetID,
+				SYNCInstantiateOptions.ClientAuth | (instantiateInWorldSpace ? SYNCInstantiateOptions.ParentWorldSpace : SYNCInstantiateOptions.Parent),
+				SYNC.ClientNetID
+			);
+
+			SendObjectInstantiate(pack, prefabID);
+		}
+
+		private void SendObjectInstantiate(InstantiatePack pack, int prefabID) {
+			SYNCObjectInstantiateMsg msg = new SYNCObjectInstantiateMsg {NetID = -1, PrefabID = prefabID, Info = pack};
+
+			_packetProcessor.Send(Server, msg, DeliveryMethod.ReliableOrdered);
+		}
+
 		#region Message Callbacks
 		private void OnRegisterNetID(SYNCClientRegisterNetIDMsg msg, NetPeer _) {
 			Debug.Log($"[CLIENT] Connected with ClientNetID: {msg.ClientNetID}");
 			_clientNetID = msg.ClientNetID;
 
 			_onConnect?.Invoke(_clientNetID);
+			SYNC.SetupComplete();
 		}
 
 		private void OnClientJoined(SYNCClientJoinedMsg msg, NetPeer _) {
@@ -166,8 +238,14 @@ namespace Sync.Components {
 				else
 					syncComponent = Instantiate(prefab, msg.Info.Position, msg.Info.Rotation);
 
+				if (syncComponent.Authority == SYNCAuthority.Client && (msg.Info.options & SYNCInstantiateOptions.ClientAuth) == 0)
+					syncComponent.Authority = SYNCAuthority.Server;
+
 				syncComponent.AssignNetID(msg.NetID);
+				syncComponent.AssignAuthorityID(msg.Info.ClientAuthorityID);
 				SyncIdentities.Add(msg.NetID, syncComponent);
+
+				syncComponent.ManualRegistration();
 			}
 		}
 

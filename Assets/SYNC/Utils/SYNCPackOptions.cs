@@ -77,6 +77,7 @@ namespace Sync.Utils {
 		PositionAndRotation = SYNCInstantiateMode.PositionAndRotation,
 		Parent = SYNCInstantiateMode.Parent,
 		ParentWorldSpace = SYNCInstantiateMode.ParentWorldSpace,
+		ClientAuth = 1 << 8,
 	}
 
 	[Flags]

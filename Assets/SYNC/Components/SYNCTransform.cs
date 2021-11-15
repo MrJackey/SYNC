@@ -51,15 +51,15 @@ namespace Sync.Components {
 			SyncIdentity = GetComponent<SYNCIdentity>();
 			SyncIdentity.SyncTransform = this;
 
-			SyncIdentity.NetIDAssigned += OnNetIDAssigned;
+			SYNC.setupComplete += RegisterAtHandler;
 		}
 
-		private void OnNetIDAssigned(int netID) {
-			SYNCTransformHandler.Register(netID);
+		internal void RegisterAtHandler() {
+			SYNCTransformHandler.Register(SyncIdentity);
 		}
 
 		private void Update() {
-			if (SYNC.IsClient && !SYNC.IsServer && _catchDownBuffer.Count > Optimal_Snapshot + 1) {
+			if (_catchDownBuffer.Count > Optimal_Snapshot + 1) {
 				float tickDelta = SYNCClient.Instance.ReceiveRate * Time.deltaTime;
 				float catchDown = TargetSnapshot != Optimal_Snapshot
 					? _catchDownBuffer[TargetSnapshot]
@@ -181,10 +181,9 @@ namespace Sync.Components {
 
 		private void OnDestroy() {
 			if (NetID != 0)
-				SYNCTransformHandler.UnRegister(NetID);
+				SYNCTransformHandler.Unregister(SyncIdentity);
 
-			if (SyncIdentity != null)
-				SyncIdentity.NetIDAssigned -= OnNetIDAssigned;
+			SYNC.setupComplete -= RegisterAtHandler;
 		}
 
 		internal TransformPack GetData() {

@@ -1,25 +1,32 @@
 ﻿using System.Collections.Generic;
 using Sync.Components;
 using Sync.Packs;
+using Sync.Utils;
 
 namespace Sync.Handlers {
 	internal static class SYNCTransformHandler {
-		private static HashSet<int> _transformIDs = new HashSet<int>();
+		private static readonly HashSet<int> _localTransformIDs = new HashSet<int>();
 
-		internal static void Register(int syncIdentityNetID) {
-			_transformIDs.Add(syncIdentityNetID);
+		internal static void Register(SYNCIdentity identity) {
+			if (SYNCHelperInternal.IsAuthorityMine(identity))
+				_localTransformIDs.Add(identity.NetID);
 		}
 
-		internal static void UnRegister(int syncIdentityNetID) {
-			_transformIDs.Remove(syncIdentityNetID);
+		internal static void Unregister(SYNCIdentity identity) {
+			if (SYNCHelperInternal.IsAuthorityMine(identity))
+				_localTransformIDs.Remove(identity.NetID);
 		}
 
 		internal static TransformPack[] GetData() {
-			TransformPack[] packs = new TransformPack[_transformIDs.Count];
+			TransformPack[] packs = new TransformPack[_localTransformIDs.Count];
 
 			int i = 0;
-			foreach (int ID in _transformIDs) {
-				packs[i] = SYNCServer.Instance.SyncIdentities[ID].SyncTransform.GetData();
+			foreach (int ID in _localTransformIDs) {
+				if (SYNC.IsServer)
+					packs[i] = SYNCServer.Instance.SyncIdentities[ID].SyncTransform.GetData();
+				else if (SYNC.IsClient)
+					packs[i] = SYNCClient.Instance.SyncIdentities[ID].SyncTransform.GetData();
+
 				i++;
 			}
 
@@ -28,9 +35,11 @@ namespace Sync.Handlers {
 
 		internal static void ApplyData(TransformPack[] msg) {
 			foreach (TransformPack pack in msg)
-				// Workaround due to ServerState messages appearing before instantiating
-				if (SYNCClient.Instance.SyncIdentities.TryGetValue(pack.netID, out SYNCIdentity syncIdentity))
-					syncIdentity.SyncTransform.ApplyData(pack);
+				// TryGetValue is used due to ServerState messages can be received before other such as instantiating
+				if (SYNC.IsServer && SYNCServer.Instance.SyncIdentities.TryGetValue(pack.netID, out SYNCIdentity serverIdentity))
+					serverIdentity.SyncTransform.ApplyData(pack);
+				else if (SYNC.IsClient && SYNCClient.Instance.SyncIdentities.TryGetValue(pack.netID, out SYNCIdentity clientIdentity))
+					clientIdentity.SyncTransform.ApplyData(pack);
 		}
 	}
 }

@@ -48,10 +48,16 @@ namespace Sync.Components {
 
 		private void Start() {
 			if (_hostOnStart)
-				if (_settings != null)
-					InitializeNetwork(_settings.port, _settings.serverSendRate);
-				else
+				if (_settings != null) {
+					_password = _settings.serverKey;
+					InitializeNetwork(_settings.port, _settings.sendRate);
+
+					if (!SYNC.IsClient)
+						SYNC.SetupComplete();
+				}
+				else {
 					Debug.LogError("[SERVER] Server requires a settings object when starting on awake", gameObject);
+				}
 
 			SceneManager.sceneLoaded += OnSceneLoaded;
 			DontDestroyOnLoad(gameObject);
@@ -63,7 +69,7 @@ namespace Sync.Components {
 			foreach (SYNCIdentity syncIdentity in SYNCHelperInternal.FindExistingIdentities()) {
 				if (syncIdentity.NetID != default) continue;
 
-				syncIdentity.AssignNetID(SYNC.GetNextNetID());
+				syncIdentity.AssignNetID(SYNC.IncrementNetID());
 				SyncIdentities.Add(syncIdentity.NetID, syncIdentity);
 			}
 		}
@@ -81,7 +87,9 @@ namespace Sync.Components {
 
 			SYNCHelperInternal.RegisterNestedTypes(_packetProcessor);
 
-			_packetProcessor.SubscribeReusable<SYNCRPCMsg>(OnRPC);
+			_packetProcessor.SubscribeReusable<SYNCRPCMsg, NetPeer>(OnRPC);
+			_packetProcessor.SubscribeReusable<SYNCServerStateMsg, NetPeer>(OnServerState);
+			_packetProcessor.SubscribeReusable<SYNCObjectInstantiateMsg, NetPeer>(OnObjectInstantiate);
 		}
 
 		private void RegisterPrefabs() {
@@ -110,7 +118,7 @@ namespace Sync.Components {
 			_settings = settings;
 			_password = password;
 
-			InitializeNetwork(settings.port, settings.serverSendRate);
+			InitializeNetwork(settings.port, settings.sendRate);
 			StartCoroutine(CoConnectToSelf(password, settings, onConnect));
 		}
 
@@ -127,8 +135,52 @@ namespace Sync.Components {
 			Destroy(this);
 		}
 
-		private void OnRPC(SYNCRPCMsg msg) {
+		private void OnRPC(SYNCRPCMsg msg, NetPeer _) {
 			SyncIdentities[msg.NetID].ExecuteRPC(msg);
+		}
+
+		private void OnServerState(SYNCServerStateMsg msg, NetPeer peer) {
+			if (!SYNC.IsClient || peer.Id != SYNC.ClientNetID) {
+				SYNCTransformHandler.ApplyData(msg.SYNCTransforms);
+				SYNCAnimatorHandler.ApplyData(msg.SYNCAnimators);
+				SYNCVarHandler.ApplyData(msg.SYNCVars);
+			}
+
+			foreach (NetPeer connectedPeer in _server.ConnectedPeerList) {
+				if (connectedPeer.Id == peer.Id) continue;
+				if (SYNC.IsClient && connectedPeer.Id == SYNC.ClientNetID) continue;
+
+				_packetProcessor.Send(connectedPeer, msg, DeliveryMethod.Unreliable);
+			}
+		}
+
+		private void OnObjectInstantiate(SYNCObjectInstantiateMsg msg, NetPeer peer) {
+			if (!_registeredPrefabs.TryGetValue(msg.PrefabID, out SYNCIdentity prefab)) {
+				Debug.LogError($"[Server] Received an instantiate message with unknown id: {msg.PrefabID}");
+				return;
+			}
+
+			SYNCIdentity syncComponent;
+			if ((msg.Info.options & SYNCInstantiateOptions.Parent) != 0 || (msg.Info.options & SYNCInstantiateOptions.ParentWorldSpace) != 0)
+				syncComponent = Instantiate(prefab, SyncIdentities[msg.Info.Parent].transform, (msg.Info.options & SYNCInstantiateOptions.ParentWorldSpace) != 0);
+			else
+				syncComponent = Instantiate(prefab, msg.Info.Position, msg.Info.Rotation);
+
+			syncComponent.AssignNetID(SYNC.IncrementNetID());
+			syncComponent.AssignAuthorityID(msg.Info.ClientAuthorityID);
+			SyncIdentities.Add(syncComponent.NetID, syncComponent);
+			msg.NetID = syncComponent.NetID;
+
+			if (SYNC.IsClient)
+				SYNCClient.Instance.SyncIdentities.Add(syncComponent.NetID, syncComponent);
+
+			syncComponent.ManualRegistration();
+
+			foreach (NetPeer connectedPeer in _server.ConnectedPeerList) {
+				if (SYNC.IsClient && connectedPeer.Id == SYNC.ClientNetID) continue;
+
+				_packetProcessor.Send(connectedPeer, msg, DeliveryMethod.ReliableOrdered);
+			}
 		}
 
 		#region Message Senders
@@ -136,25 +188,18 @@ namespace Sync.Components {
 			TransformPack[] syncTransforms = SYNCTransformHandler.GetData();
 			AnimatorPack[] syncAnimators = SYNCAnimatorHandler.GetData();
 			IdentityVarsPack[] identityVars = SYNCVarHandler.GetData();
-			const DeliveryMethod deliveryMethod = DeliveryMethod.Unreliable;
 
 			foreach (NetPeer peer in _server.ConnectedPeerList) {
-				int maxPacketSize = peer.GetMaxSinglePacketSize(deliveryMethod)
-				                    - sizeof(ulong) // The NetPacketProcessor adds an ulong hash of 8 bytes onto its own writer
-				                    - 2 // Not sure where these 2 bytes are being added to the writer
-				                    - SYNCServerStateMsg.HeaderSize;
+				if (SYNC.IsClient && peer.Id == SYNC.ClientNetID) continue;
 
-				List<SYNCPacket<TransformPack>> transformPackets = SYNCHelperInternal.DividePacksIntoPackets(syncTransforms, maxPacketSize);
-				foreach (SYNCPacket<TransformPack> packet in transformPackets)
-					_packetProcessor.Send(peer, new SYNCServerStateMsg {tick = _serverTick, SYNCTransforms = packet.Content, SYNCAnimators = new AnimatorPack[0], SYNCVars = new IdentityVarsPack[0]}, deliveryMethod);
-
-				List<SYNCPacket<AnimatorPack>> animatorPackets = SYNCHelperInternal.DividePacksIntoPackets(syncAnimators, maxPacketSize);
-				foreach (SYNCPacket<AnimatorPack> packet in animatorPackets)
-					_packetProcessor.Send(peer, new SYNCServerStateMsg {tick = _serverTick, SYNCTransforms = new TransformPack[0], SYNCAnimators = packet.Content, SYNCVars = new IdentityVarsPack[0]}, deliveryMethod);
-
-				List<SYNCPacket<IdentityVarsPack>> varPackets = SYNCHelperInternal.DividePacksIntoPackets(identityVars, maxPacketSize);
-				foreach (SYNCPacket<IdentityVarsPack> packet in varPackets)
-					_packetProcessor.Send(peer, new SYNCServerStateMsg {tick = _serverTick, SYNCTransforms = new TransformPack[0], SYNCAnimators = new AnimatorPack[0], SYNCVars = packet.Content}, deliveryMethod);
+				SYNCHelperInternal.SendServerState(
+					_packetProcessor,
+					peer,
+					_serverTick,
+					syncTransforms,
+					syncAnimators,
+					identityVars
+				);
 			}
 		}
 
@@ -168,10 +213,21 @@ namespace Sync.Components {
 
 			SYNCIdentity syncComponent = Instantiate(prefab, position, rotation);
 
+			SYNCInstantiateOptions instantiateOptions = (SYNCInstantiateOptions)((ushort)mode | (ushort)accuracy);
+
+			if (syncComponent.Authority == SYNCAuthority.Client && SYNC.IsClient) {
+				syncComponent.AssignAuthorityID(SYNC.ClientNetID);
+				instantiateOptions |= SYNCInstantiateOptions.ClientAuth;
+			}
+			else {
+				syncComponent.Authority = SYNCAuthority.Server;
+			}
+
 			InstantiatePack pack = new InstantiatePack(
 				position,
 				rotation,
-				(SYNCInstantiateOptions)((ushort)mode | (ushort)accuracy)
+				instantiateOptions,
+				syncComponent.AuthorityID
 			);
 
 			SendObjectInstantiate(pack, syncComponent, prefabID);
@@ -187,17 +243,26 @@ namespace Sync.Components {
 
 			SYNCIdentity syncComponent = Instantiate(prefab, SyncIdentities[parentNetID].transform, instantiateInWorldSpace);
 
+			SYNCInstantiateOptions instantiateOptions = instantiateInWorldSpace ? SYNCInstantiateOptions.ParentWorldSpace : SYNCInstantiateOptions.Parent;
+
+			if (syncComponent.Authority == SYNCAuthority.Client && SYNC.IsClient) {
+				syncComponent.AssignAuthorityID(SYNC.ClientNetID);
+				instantiateOptions |= SYNCInstantiateOptions.ClientAuth;
+			}
+
 			InstantiatePack pack = new InstantiatePack(
 				parentNetID,
-				instantiateInWorldSpace ? SYNCInstantiateOptions.ParentWorldSpace : SYNCInstantiateOptions.Parent
+				instantiateOptions,
+				syncComponent.AuthorityID
 			);
 
 			SendObjectInstantiate(pack, syncComponent, prefabID);
 		}
 
 		private void SendObjectInstantiate(InstantiatePack pack, SYNCIdentity syncComponent, int prefabID) {
-			syncComponent.AssignNetID(SYNC.GetNextNetID());
+			syncComponent.AssignNetID(SYNC.IncrementNetID());
 			SyncIdentities.Add(syncComponent.NetID, syncComponent);
+			syncComponent.ManualRegistration();
 
 			if (SYNC.IsClient)
 				SYNCClient.Instance.SyncIdentities.Add(syncComponent.NetID, syncComponent);

@@ -9,8 +9,11 @@ namespace Sync {
 		public SYNCIdentity[] nonPlayerPrefabs;
 
 		[Header("Settings")]
-		[Tooltip("The rate at which the server sends updates to all connected clients (in seconds)")]
-		public int serverSendRate = 20;
+		[Tooltip("The rate at which the server and clients sends updates to all connected clients (in seconds)")]
+		public int sendRate = 20;
+
+		[Tooltip("What key is required to connect to the server when hosting server on start")]
+		public string serverKey = "Sample_key";
 
 		[Tooltip("Port used when setting up and connecting to a server")]
 		public int port;
@@ -34,8 +37,6 @@ namespace Sync {
 		public int maxConnectAttempts = 10;
 
 		[Header("Debug")]
-		public string password = "Debug_key";
-
 		[Space]
 		[Tooltip("Turn on to simulate packet loss (Requires DEBUG mode")]
 		public bool simulatePacketLoss;
