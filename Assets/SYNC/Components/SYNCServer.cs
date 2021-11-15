@@ -72,6 +72,7 @@ namespace Sync.Components {
 				if (syncIdentity.NetID != default) continue;
 
 				syncIdentity.AssignNetID(SYNC.IncrementNetID());
+				syncIdentity.Setup();
 				SyncIdentities.Add(syncIdentity.NetID, syncIdentity);
 			}
 		}

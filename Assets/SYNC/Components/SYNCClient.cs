@@ -62,8 +62,10 @@ namespace Sync.Components {
 
 		private void AssignNetIDs() {
 			foreach (SYNCIdentity syncIdentity in SYNCHelperInternal.FindExistingIdentities()) {
-				if (!SYNC.IsServer && syncIdentity.NetID == default)
+				if (!SYNC.IsServer && syncIdentity.NetID == default) {
 					syncIdentity.AssignNetID(SYNC.IncrementNetID());
+					syncIdentity.Setup();
+				}
 
 				if (!SyncIdentities.ContainsKey(syncIdentity.NetID))
 					SyncIdentities.Add(syncIdentity.NetID, syncIdentity);
