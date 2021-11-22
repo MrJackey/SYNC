@@ -21,8 +21,6 @@ namespace Sync {
 		/// </summary>
 		public static int ClientNetID => IsClient ? SYNCClient.Instance.ClientNetID : -1;
 
-		internal static event Action setupComplete;
-
 		/// <summary>
 		/// Invoked whenever a player (excluding myself) has connected to the server
 		/// </summary>
@@ -85,11 +83,6 @@ namespace Sync {
 		public static void Instantiate(Object prefab, Object parent, bool instantiateInWorldSpace = false) {
 			SYNCIdentity syncIdentity = SYNCHelperInternal.GetSYNCIdentity(parent);
 
-			if (syncIdentity == default) {
-				Debug.LogError($"[SYNC] Instantiate parent does not have a SYNCIdentity {parent.name}", parent);
-				return;
-			}
-
 			Instantiate(prefab, syncIdentity.NetID, instantiateInWorldSpace);
 		}
 
@@ -114,10 +107,6 @@ namespace Sync {
 		public static void Destroy(SYNCIdentity syncIdentity) {
 			if (IsServer)
 				SYNCServer.Instance.SendObjectDestroy(syncIdentity);
-		}
-
-		internal static void SetupComplete() {
-			setupComplete?.Invoke();
 		}
 
 		internal static void PlayerConnected(int clientID) {

@@ -6,7 +6,7 @@ namespace Sync {
 	[CreateAssetMenu(fileName = "new SYNCSettings", menuName = "SYNC/Settings", order = 0)]
 	public class SYNCSettings : ScriptableObject {
 		[Tooltip("List of all prefabs which can be instantiated and replicated to clients")]
-		public SYNCIdentity[] nonPlayerPrefabs;
+		public SYNCIdentity[] syncedPrefabs;
 
 		[Header("Settings")]
 		[Tooltip("The rate at which the server and clients sends updates to all connected clients (in seconds)")]

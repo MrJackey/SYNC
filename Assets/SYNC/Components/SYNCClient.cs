@@ -97,7 +97,7 @@ namespace Sync.Components {
 		}
 
 		private void RegisterPrefabs() {
-			foreach (SYNCIdentity prefab in _settings.nonPlayerPrefabs)
+			foreach (SYNCIdentity prefab in _settings.syncedPrefabs)
 				_registeredPrefabs.Add(prefab.GetInstanceID(), prefab);
 		}
 

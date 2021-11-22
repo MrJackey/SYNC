@@ -50,8 +50,6 @@ namespace Sync.Components {
 		private void Awake() {
 			SyncIdentity = GetComponent<SYNCIdentity>();
 			SyncIdentity.SyncTransform = this;
-
-			SYNC.setupComplete += RegisterAtHandler;
 		}
 
 		internal void RegisterAtHandler() {
@@ -182,8 +180,6 @@ namespace Sync.Components {
 		private void OnDestroy() {
 			if (NetID != 0)
 				SYNCTransformHandler.Unregister(SyncIdentity);
-
-			SYNC.setupComplete -= RegisterAtHandler;
 		}
 
 		internal TransformPack GetData() {
