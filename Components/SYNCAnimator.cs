@@ -33,7 +33,8 @@ namespace Sync.Components {
 
 		private void CacheParameterHashes() {
 			foreach (AnimatorControllerParameter parameter in _animator.parameters)
-				_parameterHashes.Add(parameter.name, parameter.nameHash);
+				if (parameter.type != AnimatorControllerParameterType.Trigger)
+					_parameterHashes.Add(parameter.name, parameter.nameHash);
 		}
 
 		internal void RegisterAtHandler() {
@@ -46,13 +47,12 @@ namespace Sync.Components {
 		}
 
 		internal AnimatorPack GetData() {
-			List<AnimatorParameterPack> parameterPacks = new List<AnimatorParameterPack>();
+			AnimatorParameterPack[] parameterPacks = new AnimatorParameterPack[_parameterHashes.Count];
 
 			for (int i = 0; i < _animator.parameterCount; i++)
-				if (_animator.parameters[i].type != AnimatorControllerParameterType.Trigger)
-					parameterPacks.Add(ConstructAnimatorParameterPack(_animator.parameters[i]));
+				parameterPacks[i] = ConstructAnimatorParameterPack(_animator.parameters[i]);
 
-			return new AnimatorPack(NetID, parameterPacks.ToArray());
+			return new AnimatorPack(NetID, parameterPacks);
 		}
 
 		private AnimatorParameterPack ConstructAnimatorParameterPack(AnimatorControllerParameter parameter) {
